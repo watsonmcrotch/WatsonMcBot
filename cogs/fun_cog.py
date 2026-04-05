@@ -18,15 +18,24 @@ class FunCog(commands.Cog):
             display_name = user_context.get('nickname', ctx.author.name)
 
             commands_list = [
-            "!dadjoke", "!discord", "!duel", "!edge", "!edgestats", "!edgelords",
-            "!emotes", "!feed", "!kiss", "!lastgame", "!leaderboard", "!nickname",
-            "!pet", "!replay", "!rizz", "!roll", "!skip", "!slap", "!song", "!stinky",
-            "!topemotes", "!translate", "!triviastats"
+            "!bonk", "!dadjoke", "!dance", "!discord", "!duel", "!edge",
+            "!edgestats", "!edgelords", "!emotes", "!feed", "!hug", "!kiss",
+            "!lastgame", "!leaderboard", "!nickname", "!pet", "!replay",
+            "!rizz", "!roll", "!scare", "!skip", "!slap", "!song", "!stinky",
+            "!tickle", "!topemotes", "!translate", "!triviastats"
             ]
 
             response = f"Hey {display_name}, here are my commands: " + " | ".join(commands_list)
 
-            await ctx.send(response)
+            if len(response) > 500:
+                mid = len(commands_list) // 2
+                response1 = f"Hey {display_name}, commands (1/2): " + " | ".join(commands_list[:mid])
+                response2 = "Commands (2/2): " + " | ".join(commands_list[mid:])
+                await ctx.send(response1)
+                await asyncio.sleep(0.5)
+                await ctx.send(response2)
+            else:
+                await ctx.send(response)
             self.bot.log_message("Commands list requested", 'system')
 
         except Exception as e:

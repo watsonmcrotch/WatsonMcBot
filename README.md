@@ -106,8 +106,7 @@ Commands are organised into twitchio Cogs for modularity:
 - **TriviaCog**: Trivia display (`!triviastats`, `!lastgame`, `!leaderboard`)
 - **AdminCog**: Admin/streamer commands (`!addinfo`, `!deleteinfo`, `!getinfo`, `!addspam`, `!removespam`, `!listspam`, `!reloademotes`, `!listrewards`, stat clearing)
 - **AdminTestCog**: Testing commands (`!ping`, `!testfollow`, `!testcheer`, `!testsub`, `!testraid`, `!testgift`, `!testimage`, `!testvideo`, `!testsong`, etc.)
-- **OverlayCog**: WatsonOS overlay mod commands (`!effect`, `!errors`, `!tbc`, `!maze`, `!clippy`, `!desktop`)
-- **CompanionCog**: Companion interaction (`!pet`, `!feed`, `!slap`, `!kiss`)
+- **CompanionCog**: Companion interaction (`!pet`, `!feed`, `!slap`, `!kiss`, `!tickle`, `!scare`, `!dance`, `!hug`, `!bonk`)
 
 #### Services Layer
 - **Database Manager** (`services/database_manager.py`): SQLAlchemy-based data persistence
@@ -293,7 +292,7 @@ WatsonMcBot/
 │   ├── companion_cog.py
 │   ├── edge_cog.py
 │   ├── fun_cog.py
-│   ├── overlay_cog.py
+
 │   ├── stream_cog.py
 │   └── trivia_cog.py
 ├── redeems/                # Channel point redeem handlers
@@ -379,6 +378,11 @@ WatsonMcBot/
 | `!feed` | | Feed the companion |
 | `!slap` | | Slap the companion |
 | `!kiss` | | Kiss the companion |
+| `!tickle` | | Tickle the companion |
+| `!scare` | | Scare the companion |
+| `!dance` | | Make the companion dance |
+| `!hug` | | Hug the companion |
+| `!bonk` | | Bonk the companion |
 
 ### Moderator Commands
 | Command | Description |
@@ -389,7 +393,6 @@ WatsonMcBot/
 | `!addspam <pattern>` | Add spam detection pattern |
 | `!removespam <pattern>` | Remove spam detection pattern |
 | `!listspam` | View spam patterns |
-| `!effect`, `!errors`, `!tbc`, `!maze`, `!clippy`, `!desktop` | WatsonOS overlay commands |
 
 ### Streamer Commands
 | Command | Description |

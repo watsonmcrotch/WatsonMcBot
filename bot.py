@@ -57,12 +57,12 @@ from redeems.stinky_redeem import StinkyHandler
 from redeems.trivia_redeem import TriviaGameShow
 from redeems.video_redeem import VideoRedeemHandler
 from redeems.watsontts_redeem import WatsonHandler
-from redeems.overlay_redeems import OverlayRedeems
+
 
 from services.chat_manager import ChatHandler
 from services.database_manager import DatabaseManager
 from services.obs_client import OBSClient
-from services.obs_overlay_manager import OBSOverlayManager
+
 from services.spotify_widget_handler import SpotifyWidgetHandler
 from services.state_manager import bot_state
 from services.twitch_token_manager import TwitchTokenManager
@@ -689,9 +689,6 @@ class WatsonMcBot(commands.Bot):
             port=4455,
             password=OBS_PASSWORD)
 
-        self.overlay_manager = OBSOverlayManager(
-            obs_client=self.obs_client,
-            base_url=os.getenv('OVERLAY_BASE_URL', 'http://localhost:5555/stream'))
 
         self.db_manager = DatabaseManager(streamer_name=CHANNEL_NAME)
         self.spotify_manager = SpotifyManager(
@@ -851,10 +848,6 @@ class WatsonMcBot(commands.Bot):
             db_manager=self.db_manager,
             send_companion_event=self.send_companion_event)
 
-        self.overlay_redeems = OverlayRedeems(
-            db_manager=self.db_manager,
-            send_companion_event=self.send_companion_event,
-            overlay_manager=self.overlay_manager)
 
         self.REDEEMS = {
             'ADD_TO_QUEUE': os.getenv('ADD_TO_QUEUE'),
@@ -879,9 +872,6 @@ class WatsonMcBot(commands.Bot):
             'TRIVIA_GAME': os.getenv('TRIVIA_GAME'),
             'VIDEO_REDEEM': os.getenv('VIDEO_REDEEM'),
             'WATSONTTS': os.getenv('WATSONTTS'),
-            'TBC': os.getenv('TBC'),
-            'CAMERA_EFFECT': os.getenv('CAMERA_EFFECT'),
-            'ERROR_CHAOS': os.getenv('ERROR_CHAOS'),
         }       
 
         self.background_tasks = {}
@@ -1354,7 +1344,7 @@ class WatsonMcBot(commands.Bot):
                 'cogs.trivia_cog',
                 'cogs.admin_cog',
                 'cogs.admin_test_cog',
-                'cogs.overlay_cog',
+
                 'cogs.companion_cog',
             ]
             for cog_module in cog_modules:
@@ -2864,21 +2854,6 @@ Be casually witty or return "SKIP". Those are your options."""
                 self.log_message("Processing watson tts redeem")
                 asyncio.create_task(self.watsontts_redeem.process_watsontts_redeem(
                     channel=channel,username=username,story_text=user_input))
-
-            elif reward_id == self.REDEEMS.get('TBC'):
-                self.log_message("Processing TBC redeem")
-                asyncio.create_task(self.overlay_redeems.process_tbc_redeem(
-                    channel=channel,username=username,user_input=user_input))
-
-            elif reward_id == self.REDEEMS.get('CAMERA_EFFECT'):
-                self.log_message("Processing camera effect redeem")
-                asyncio.create_task(self.overlay_redeems.process_effect_redeem(
-                    channel=channel,username=username,user_input=user_input))
-
-            elif reward_id == self.REDEEMS.get('ERROR_CHAOS'):
-                self.log_message("Processing error chaos redeem")
-                asyncio.create_task(self.overlay_redeems.process_error_redeem(
-                    channel=channel,username=username,user_input=user_input))
 
             else:
                 self.log_message(f"Unknown reward ID: {reward_id}")

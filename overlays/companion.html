@@ -1922,12 +1922,11 @@
                 if (type === 'pong') {
                     const pongField = document.createElement('div');
                     pongField.className = 'pong-field';
-                    pongField.innerHTML = `
-                        <div class="pong-net"></div>
-                        <div class="ping"></div>
-                        <div class="pong-paddle"></div>
-                        <div class="ball"></div>
-                    `;
+                    ['pong-net', 'ping', 'pong-paddle', 'ball'].forEach(cls => {
+                        const el = document.createElement('div');
+                        el.className = cls;
+                        pongField.appendChild(el);
+                    });
                     this.displayContainer.appendChild(pongField);
                 }
 
