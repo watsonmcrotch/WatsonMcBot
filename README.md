@@ -32,8 +32,8 @@ WatsonMcBot is a sophisticated Twitch chatbot that combines conversational AI, r
 - **Genie Wishes**: AI-generated wish fulfilment with "monkey's paw" like outcomes
 - **Priest Confessions**: Humorous AI-generated absolutions for any sin
 - **Custom Songs**: AI-generated music with Suno API integration featuring simple prompt based input, or fully custom song creation guided by the chatbot
-- **AI Images**: Generate custom artwork with multiple AI providers (Lumalabs as primary, fall back to OpenAI)
-- **AI Videos**: Create videos using OpenAI's Sora 2 API
+- **AI Images**: Generate custom artwork via Google Gemini
+- **AI Videos**: Create videos using Google Veo
 
 #### TTS & Voice Redeems
 - **Multiple Voice Characters**: Watson, Dracula, Jamie, Missile, Hoya, and more
@@ -77,8 +77,9 @@ WatsonMcBot is a sophisticated Twitch chatbot that combines conversational AI, r
 - **Source Control**: Show/hide sources programmatically
 
 #### External APIs
-- **Anthropic**: AI for conversation and content generation
-- **OpenAI**: Sora 2 for video generation, GPT for images
+- **Anthropic**: Primary AI for conversation and content generation
+- **OpenAI**: GPT-5.4 and Mini for select chatbot features where Anthropic falters
+- **Google Gemini/Veo**: AI image generation (Gemini) and video generation (Veo)
 - **ElevenLabs**: Professional text-to-speech voices
 - **Suno**: AI music generation (via 3rd party service)
 - **Govee**: Smart lighting control
@@ -572,14 +573,18 @@ The **Totally Not Trivial** system is one of the most complex features:
 ## API Integration Details
 
 ### Anthropic
-- Used for: Chat responses, game commentary, content generation, translations
+- Primary AI provider for chat responses, game commentary, content generation, translations
 - Temperature: Variable (0.7-0.8 for creativity)
 - Context: User history, stream info, custom facts
 - Shared client instance across all handlers
 
 ### OpenAI
-- Sora 2: Video generation (12-second clips, 1280x720)
-- DALL-E 3: Image generation (fallback option)
+- GPT-5.4 and Mini used for select features (e.g. Genie wishes)
+- Fills gaps where Anthropic models are less suited
+
+### Google Gemini / Veo
+- Gemini 3.1 Flash: AI image generation
+- Veo 3.1: AI video generation
 - Rate limiting and error handling implemented
 
 ### ElevenLabs
@@ -713,7 +718,8 @@ class NewModel(Base):
 
 ### APIs & Services
 - Anthropic (AI)
-- OpenAI (Sora, DALL-E)
+- OpenAI (GPT)
+- Google (Gemini, Veo)
 - ElevenLabs (Text-to-Speech)
 - Suno (Music Generation)
 - Twitch (Platform & APIs)
