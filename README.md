@@ -4,12 +4,12 @@ A comprehensive, AI-powered Twitch bot with Discord integration, featuring advan
 
 ## Overview
 
-WatsonMcBot is a sophisticated Twitch chatbot that combines conversational AI (powered by Claude), real-time event handling, multimedia generation, and extensive integration with streaming tools. The bot provides interactive entertainment, automated alerts, custom redeems, and intelligent chat responses whilst maintaining a web-based dashboard for monitoring and control.
+WatsonMcBot is a sophisticated Twitch chatbot that combines conversational AI, real-time event handling, multimedia generation, and extensive integration with streaming tools. The bot provides interactive entertainment, automated alerts, custom redeems, and intelligent chat responses whilst maintaining a web-based dashboard for monitoring and control.
 
 ## Core Features
 
 ### AI & Conversational Features
-- **Claude AI Integration**: Natural language processing for intelligent chat responses
+- **AI Integration**: Natural language processing for intelligent chat responses
 - **Context-Aware Responses**: Remembers user interactions, preferences, and conversation history
 - **Ambient Mode**: Optionally responds to chat naturally without explicit commands
 - **Custom User Information**: Track and reference custom facts about chatters
@@ -53,9 +53,10 @@ WatsonMcBot is a sophisticated Twitch chatbot that combines conversational AI (p
   - Animated overlays and sound effects
   - Player history and achievements
 
-- **Duel System**: Challenge other chatters to "edge" battles
-- **Edge System**: Session-based tracking with milestones
-- **Dice roll and more**: Several commands designed to provide chat with enrichment and fun
+- **Edge System**: Session-based streak tracking with milestones (PB, 69, 100, every 50), recovery cooldowns, blessings, and bust mechanics
+- **Duel System**: Challenge other chatters to edge battles
+- **Dice Rolls**: Configurable dice rolling with spam protection
+- **Rizz**: Fun social command with sound effects and random messages
 
 ### Integrations
 
@@ -65,18 +66,18 @@ WatsonMcBot is a sophisticated Twitch chatbot that combines conversational AI (p
 
 #### Spotify
 - **Now Playing Widget**: Real-time song information overlay
-- **Playback Control**: Commands for play, pause, skip, previous
-- **Queue Management**: Add songs via channel points or commands
+- **Playback Control**: Commands for skip and now-playing
+- **Queue Management**: Add songs via channel points
 - **Widget Updates**: Automatic display of current track, artist, and album
 
 #### OBS
-- **WebSocket Integration**: Direct OBS control via obs-websocket
-- **Scene Management**: Automated scene changes and transitions
+- **WebSocket Integration**: Direct OBS control via obsws-python
+- **Scene Management**: Automated scene changes with companion reactions
 - **Overlay System**: Dynamic text, images, and video overlays
 - **Source Control**: Show/hide sources programmatically
 
 #### External APIs
-- **Claude AI**: Anthropic's Claude for conversation and content generation
+- **Anthropic**: AI for conversation and content generation
 - **OpenAI**: Sora 2 for video generation, GPT for images
 - **ElevenLabs**: Professional text-to-speech voices
 - **Suno**: AI music generation (via 3rd party service)
@@ -91,10 +92,21 @@ WatsonMcBot is a sophisticated Twitch chatbot that combines conversational AI (p
 The main bot class handles:
 - Twitch connection and authentication
 - Message routing and processing
-- Command handling
 - Event coordination
 - Database interactions
 - Token management
+- Shared HTTP session and API clients
+
+#### Command Cogs (`cogs/`)
+Commands are organised into twitchio Cogs for modularity:
+- **FunCog**: General commands (`!commands`, `!list`, `!dadjoke`, `!discord`)
+- **StreamCog**: Stream interaction (`!emotes`, `!topemotes`, `!song`, `!skip`, `!roll`, `!rizz`, `!translate`, `!replay`, `!stinky`, `!nickname`, `!setprompt`, `!removeprompt`, `!viewprompt`)
+- **EdgeCog**: Edge game system (`!edge`, `!edgestats`, `!edgetop`, `!duel`)
+- **TriviaCog**: Trivia display (`!triviastats`, `!lastgame`, `!leaderboard`)
+- **AdminCog**: Admin/streamer commands (`!addinfo`, `!deleteinfo`, `!getinfo`, `!addspam`, `!removespam`, `!listspam`, `!reloademotes`, `!listrewards`, stat clearing)
+- **AdminTestCog**: Testing commands (`!ping`, `!testfollow`, `!testcheer`, `!testsub`, `!testraid`, `!testgift`, `!testimage`, `!testvideo`, `!testsong`, etc.)
+- **OverlayCog**: WatsonOS overlay mod commands (`!effect`, `!errors`, `!tbc`, `!maze`, `!clippy`, `!desktop`)
+- **CompanionCog**: Companion interaction (`!pet`, `!feed`, `!slap`, `!kiss`)
 
 #### Services Layer
 - **Database Manager** (`services/database_manager.py`): SQLAlchemy-based data persistence
@@ -102,20 +114,20 @@ The main bot class handles:
 - **EventSub Client** (`services/eventsub_client.py`): Twitch EventSub WebSocket connection
 - **WebSocket Server** (`services/websocket_server.py`): Real-time dashboard communication
 - **Flask Server** (`services/flask_server.py`): HTTP API for dashboard and integrations
-- **OBS Client** (`services/obs_client.py`): OBS Studio WebSocket communication
-- **Discord Monitor** (`services/discord_monitor.py`): Discord bot integration
-- **Spotify Manager** (`services/spotify_manager.py`): Spotify API wrapper
+- **OBS Client** (`services/obs_client.py`): OBS Studio WebSocket communication via obsws-python
 - **Chat Manager** (`services/chat_manager.py`): Message parsing and emote handling
+- **TTS Queue** (`services/tts_queue.py`): Async audio playback queue
+- **State Manager** (`services/state_manager.py`): Bot state tracking
+- **Dashboard Broadcaster** (`services/dashboard_broadcaster.py`): Real-time dashboard updates
+- **Spotify Widget Handler** (`services/spotify_widget_handler.py`): Spotify overlay updates
 
 #### Database Models (`models.py`)
 - Users: Profile data, statistics, conversation history
 - Custom Info: User-specific facts and preferences
 - Nicknames: Display name mappings
-- Emote Usage: 7TV emote tracking statistics
 - Trivia: Game history, rounds, and player stats
-- Edge Tracking: Session data and milestones
-- Game History: Word game and duel records
-- Stink History: Point system tracking
+- Edge Tracking: Session data, streaks, and milestones
+- Stink History: Stink rating tracking
 
 #### Redeem Handlers (`redeems/`)
 Each redeem has a dedicated handler class:
@@ -124,6 +136,8 @@ Each redeem has a dedicated handler class:
 - `image_redeem.py`: AI image generation
 - `video_redeem.py`: AI video creation
 - `music_redeem.py`: Song generation
+- `light_redeem.py`: Govee smart light control
+- `stinky_redeem.py`: Stink rating system
 - And many more...
 
 #### Alert Handlers (`alerts/`)
@@ -154,18 +168,18 @@ Each redeem has a dedicated handler class:
 
 ### Configuration
 
-The bot uses environment variables loaded from a `.env` file. See the included `.env` file for required keys.
+The bot uses environment variables loaded from a `.env` file.
 
 #### Required Environment Variables
 - Twitch authentication (multiple token types)
-- API keys (Claude, OpenAI, ElevenLabs, etc.)
+- API keys (Anthropic, OpenAI, ElevenLabs, etc.)
 - Discord bot token
 - Spotify credentials
 - Channel configuration
 - Database paths
 
 #### Configuration Files
-- `config.py`: Centralised configuration loading and validation
+- `config.py`: Centralised configuration loading with `BASE_DIR` for portable path resolution
 - `.env`: Environment-specific secrets and settings
 - `start.bat`: Windows startup script
 
@@ -174,7 +188,7 @@ The bot uses environment variables loaded from a `.env` file. See the included `
 ### Prerequisites
 - Python 3.10 or higher
 - Windows OS (tested environment)
-- OBS Studio with obs-websocket plugin
+- OBS Studio with obs-websocket v5
 - Active Twitch account
 - API keys for various services
 
@@ -242,7 +256,7 @@ The bot will:
 - Connect to Twitch IRC and EventSub
 - Initialise Discord bot
 - Connect to OBS WebSocket
-- Load all handlers and services
+- Load all command Cogs and handlers
 
 ### Dashboard Access
 
@@ -271,6 +285,16 @@ WatsonMcBot/
 │   ├── gift_alert.py
 │   ├── raid_alert.py
 │   └── sub_alert.py
+├── cogs/                   # Command modules (twitchio Cogs)
+│   ├── __init__.py
+│   ├── admin_cog.py
+│   ├── admin_test_cog.py
+│   ├── companion_cog.py
+│   ├── edge_cog.py
+│   ├── fun_cog.py
+│   ├── overlay_cog.py
+│   ├── stream_cog.py
+│   └── trivia_cog.py
 ├── redeems/                # Channel point redeem handlers
 │   ├── crash_redeem.py
 │   ├── draculatts_redeem.py
@@ -296,62 +320,110 @@ WatsonMcBot/
 │   └── watsontts_redeem.py
 ├── services/               # Core service modules
 │   ├── chat_manager.py
-│   ├── database_manager.py
 │   ├── dashboard_broadcaster.py
-│   ├── discord_monitor.py
+│   ├── database_manager.py
 │   ├── eventsub_client.py
 │   ├── flask_server.py
 │   ├── obs_client.py
-│   ├── spotify_manager.py
 │   ├── spotify_widget_handler.py
 │   ├── state_manager.py
 │   ├── tts_queue.py
 │   ├── twitch_token_manager.py
 │   └── websocket_server.py
+├── overlays/               # Browser source overlays for OBS
+│   ├── assets/             # Fonts, images, videos, gifs
+│   ├── chat_overlay_main.html
+│   ├── chat_overlay_misc.html
+│   ├── companion.html
+│   ├── fullscreen_overlay.html
+│   └── spotify_widget.html
 ├── templates/              # HTML templates for dashboard
 │   └── dashboard.html
-├── logs/                   # Log files (auto-generated)
-├── sounds/                 # Audio files for redeems
-├── data/                   # JSON data storage
+├── sounds/                 # Audio files for alerts and redeems
+├── data/                   # JSON data storage and misc assets
 ├── bot.py                  # Main bot class
 ├── config.py               # Configuration management
-├── models.py               # Database models
+├── models.py               # Database models (SQLAlchemy)
+├── govee_devices.py        # Govee light API wrapper
 ├── run_bot.py              # Entry point
 ├── start.bat               # Windows startup script
-├── govee_devices.py        # Govee light API wrapper
 ├── .env                    # Environment variables (not in repo)
 └── requirements.txt        # Python dependencies
 ```
 
 ## Commands
 
-### Chat Commands
+### User Commands
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `!commands` | `!cmds`, `!menu` | Display available commands |
+| `!dadjoke` | | Fetch a random dad joke |
+| `!discord` | | Get Discord invite (followers only) |
+| `!edge` | `!edge1`-`!edge10` | Edge streak game (1-10 attempts) |
+| `!edgestats` | | View edge statistics for a user |
+| `!edgetop` | `!edgelords`, `!topedge` | Edge leaderboard |
+| `!duel` | | Challenge someone to an edge-off |
+| `!emotes` | `!emote` | View emote usage stats |
+| `!topemotes` | | Channel-wide emote leaderboard |
+| `!nickname` | | View a user's nickname |
+| `!stinky` | `!stink`, `!smelly` | View stink report |
+| `!song` | | Currently playing Spotify track |
+| `!roll` | | Roll dice (e.g. `!roll 2d6`) |
+| `!rizz` | | Shoot your shot at someone |
+| `!translate` | | Translate text to another language |
+| `!triviastats` | | View trivia statistics |
+| `!lastgame` | | Summary of last trivia game |
+| `!leaderboard` | `!triviatop` | Trivia leaderboard |
+| `!pet` | | Pet the companion |
+| `!feed` | | Feed the companion |
+| `!slap` | | Slap the companion |
+| `!kiss` | | Kiss the companion |
 
-#### User Commands
-- `!commands` - Display available commands
-- `!points` - Check channel point balance
-- `!stats` - View personal statistics
-- `!emotes [username]` - View emote usage statistics
-- `!trivia` - Check trivia statistics
-- `!edge` - View edge tracking status
-- `!stink` - Check stink points
+### Moderator Commands
+| Command | Description |
+|---------|-------------|
+| `!skip` | Skip current Spotify track |
+| `!replay` | Replay the last video |
+| `!reloademotes` | Reload 7TV emotes |
+| `!addspam <pattern>` | Add spam detection pattern |
+| `!removespam <pattern>` | Remove spam detection pattern |
+| `!listspam` | View spam patterns |
+| `!effect`, `!errors`, `!tbc`, `!maze`, `!clippy`, `!desktop` | WatsonOS overlay commands |
 
-#### Moderator Commands
-- `!setinfo <username> <key> <value>` - Store custom user information
-- `!deleteinfo <username> <key>` - Remove custom user information
-- `!getinfo <username>` - Retrieve all custom user information
-- `!setnickname <username> <nickname>` - Set user's display nickname
-- `!removenickname <username>` - Remove user's nickname
-- `!addspam <pattern>` - Add spam detection pattern
-- `!removespam <pattern>` - Remove spam detection pattern
+### Streamer Commands
+| Command | Description |
+|---------|-------------|
+| `!list` | List all admin commands |
+| `!addinfo <user> <attr> <value>` | Store custom user info |
+| `!deleteinfo <user> <attr>` | Remove specific user info |
+| `!deletealluserinfo <user>` | Remove all user info |
+| `!getinfo <user>` | View all custom info for a user |
+| `!setprompt <user> <prompt>` | Set custom AI prompt for user |
+| `!removeprompt <user>` | Remove custom AI prompt |
+| `!viewprompt <user>` | View custom AI prompt |
+| `!listrewards` | List channel point reward IDs |
+| `!clearalledgestats` | Clear all edge statistics |
+| `!clearedgestats <user>` | Clear edge stats for one user |
+| `!clearalltriviastats` | Clear all trivia statistics |
+| `!cleartriviastats <user>` | Clear trivia stats for one user |
 
-#### Streamer Commands
-- `!listrewards` - List all channel point rewards with IDs
-- `!testattack <amount>` - Test follow bot detection
-- `!testcheer <bits> [user] [message]` - Test bit alert
-- `!testfollow <username>` - Test follow alert
-- `!testgift <recipient/amount>` - Test gift subscription alert
-- `!emotestate` - Check emote tracker status
+### Test Commands (Mods)
+| Command | Description |
+|---------|-------------|
+| `!ping` | Bot connectivity check |
+| `!emotestate` | Emote tracker debug info |
+| `!tokencheck` | Validate bot/broadcaster tokens |
+| `!testfollow <user>` | Simulate follow alert |
+| `!testcheer [bits] [user]` | Simulate bit alert |
+| `!testsub` | Simulate subscription |
+| `!testresub` | Simulate resubscription |
+| `!testgift <user/amount>` | Simulate gift sub |
+| `!testmassgift [amount]` | Simulate mass gift |
+| `!testraid <user> [viewers]` | Simulate raid |
+| `!testimage [prompt]` | Test AI image generation |
+| `!testvideo [prompt]` | Test AI video generation |
+| `!testsong [prompt]` | Test AI song generation |
+| `!testattack [amount]` | Test follow bot detection |
 
 ### Dashboard Controls
 
@@ -385,11 +457,14 @@ AMBIENT_CHAT_BUFFER_SIZE=100
 
 ### Edge Tracking System
 
-A specialised feature for tracking user sessions:
-- Session-based streak tracking
-- Milestone celebrations (5, 10, 15, 30 edges)
-- Historical statistics
-- Database persistence across streams
+A session-based streak game with depth:
+- Streak tracking with escalating bust probability
+- Milestone celebrations (personal best, 69, 100, every 50)
+- Recovery cooldowns after busting (proportional to streak)
+- Blessing system (2% chance — no recovery for 15 minutes)
+- Duel mode for head-to-head edge battles
+- Sound effects for busts, milestones, and blessings
+- Persistent statistics across streams
 
 ### Follow Bot Protection
 
@@ -446,14 +521,6 @@ The **Totally Not Trivial** system is one of the most complex features:
 - Statistics tracked across all games
 - Leaderboards maintained in database
 
-### AI Host Personality
-The AI host (Claude-powered) provides:
-- Witty commentary between rounds
-- Reactions to player performance
-- References to player history
-- Dynamic responses based on game state
-- Character limit enforcement for natural pacing
-
 ## Database Schema
 
 ### Core Tables
@@ -479,12 +546,6 @@ The AI host (Claude-powered) provides:
 - username (foreign key)
 - nickname
 
-**EmoteUsage**
-- username (foreign key)
-- emote_id (foreign key)
-- count
-- last_used
-
 **TriviaStats**
 - username (foreign key)
 - games_played
@@ -496,8 +557,12 @@ The AI host (Claude-powered) provides:
 **EdgeStreak**
 - username (primary key)
 - current_streak
+- highest_streak
+- total_edges
+- total_busts
+- last_streak
+- longest_session
 - session_start
-- last_edge_time
 
 **StinkHistory**
 - username (foreign key)
@@ -506,11 +571,11 @@ The AI host (Claude-powered) provides:
 
 ## API Integration Details
 
-### Claude AI (Anthropic)
-- Model: claude-sonnet-4-5-20250929
-- Used for: Chat responses, game commentary, content generation
+### Anthropic
+- Used for: Chat responses, game commentary, content generation, translations
 - Temperature: Variable (0.7-0.8 for creativity)
 - Context: User history, stream info, custom facts
+- Shared client instance across all handlers
 
 ### OpenAI
 - Sora 2: Video generation (12-second clips, 1280x720)
@@ -564,17 +629,10 @@ The AI host (Claude-powered) provides:
 - Review TTS queue status
 
 **OBS Connection Failed**
-- Verify obs-websocket is installed
+- Verify obs-websocket v5 is installed
 - Check WebSocket port (default 4455)
 - Confirm password matches `.env`
 - Ensure OBS is running
-
-### Debug Mode
-
-Enable detailed logging:
-```python
-logging.basicConfig(level=logging.DEBUG)
-```
 
 ### Log Files
 - `logs/bot.log` - Main bot operations
@@ -583,39 +641,32 @@ logging.basicConfig(level=logging.DEBUG)
 
 ## Development & Extension
 
-### Adding New Redeems
-
-1. **Create Handler Class**
-```python
-class NewRedeem:
-    def __init__(self, db_manager, send_companion_event):
-        self.db_manager = db_manager
-        self.send_companion_event = send_companion_event
-    
-    async def process_redeem(self, channel, username, input_text):
-        # Your logic here
-        pass
-```
-
-2. **Register in bot.py**
-```python
-self.new_redeem = NewRedeem(self.db_manager, self.send_companion_event)
-```
-
-3. **Add to EventSub Handler**
-```python
-elif reward_title == 'New Redeem':
-    await self.new_redeem.process_redeem(channel, username, user_input)
-```
-
 ### Adding New Commands
 
+Create a new Cog in the `cogs/` directory:
+
 ```python
-@commands.command(name='newcommand')
-async def new_command(self, ctx):
-    # Command logic
-    await ctx.send("Response")
+from twitchio.ext import commands
+
+class MyCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(name='mycommand')
+    async def my_command(self, ctx):
+        await ctx.send("Hello!")
+
+def prepare(bot):
+    bot.add_cog(MyCog(bot))
 ```
+
+The Cog will be loaded automatically if added to the `cog_modules` list in `bot.py`'s `event_ready`.
+
+### Adding New Redeems
+
+1. **Create Handler Class** in `redeems/`
+2. **Register in `bot.py`** during initialisation
+3. **Add to EventSub Handler** in the channel points redemption section
 
 ### Adding Database Models
 
@@ -631,6 +682,7 @@ class NewModel(Base):
 
 ### Resource Management
 - Async/await used throughout for non-blocking operations
+- Shared aiohttp session for all HTTP requests
 - Database sessions properly closed after use
 - WebSocket connections monitored and reconnected
 - Audio playback uses separate threads
@@ -660,7 +712,7 @@ class NewModel(Base):
 ## Credits & Acknowledgements
 
 ### APIs & Services
-- Anthropic (Claude AI)
+- Anthropic (AI)
 - OpenAI (Sora, DALL-E)
 - ElevenLabs (Text-to-Speech)
 - Suno (Music Generation)
@@ -675,10 +727,9 @@ class NewModel(Base):
 - Discord.py: Discord integration
 - Flask: Web server
 - SQLAlchemy: Database ORM
-- Anthropic Python SDK
-- Spotipy: Spotify API wrapper
-- obs-websocket-py: OBS control
+- obsws-python: OBS WebSocket control
 - aiohttp: Async HTTP client
+- Spotipy: Spotify API wrapper
 
 ## Licence
 
@@ -690,7 +741,7 @@ For issues, questions, or contributions, please refer to the project repository.
 
 ---
 
-**Version**: 2.0
-**Last Updated**: October 2025
+**Version**: 3.0
+**Last Updated**: April 2026
 **Python Version**: 3.10+
-**Platform**: Windows (Primary), Linux (Experimental)
+**Platform**: Windows (Primary)
