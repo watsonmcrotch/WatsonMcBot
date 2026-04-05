@@ -1,0 +1,58 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+
+# Data / Database
+data/bot_data.db
+data/spotify_cache/
+
+# Generated media
+generated_videos/
+overlays/assets/videos/video_input_*
+overlays/assets/videos/video_output_*
+overlays/assets/videos/generated_video.mp4
+overlays/assets/videos/original_image.jpg
+overlays/assets/images/image_output_*
+
+# Generated/temporary sounds
+sounds/*.wav
+sounds/watsontts.mp3
+sounds/missiletts.mp3
+sounds/lettucetts.mp3
+sounds/newsreel.mp3
+sounds/story_response.mp3
+sounds/video_fail.mp3
+sounds/priest_response.mp3
+sounds/wish_response.mp3
+data/emote_data.json
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
+
+# Review output
+.full-review/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

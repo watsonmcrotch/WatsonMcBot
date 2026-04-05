@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&display=swap"
+    rel="stylesheet"
+  />
+
+  <title>Fullscreen Overlay</title>
+
+  <style>
+    * {
+      font-family: 'Montserrat', Arial, sans-serif;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    #overlay-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay-container"></div>
+
+  <script>
+    const FLASK_SERVER = 'http://localhost:5555';
+    const wsToken = new URLSearchParams(window.location.search).get('token') || '';
+    const ws = new WebSocket(`ws://localhost:8555?token=${wsToken}`);
+    const overlayContainer = document.getElementById('overlay-container');
+    const MAX_CONCURRENT_VIDEOS = 5;
+
+    function getNormalizedPath(url) {
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
+        return url;
+      }
+      
+      if (url.startsWith('file:///')) {
+        return url;
+      }
+      
+      return url.startsWith('localhost') ? 'http://' + url : url;
+    }
+
+    function getVideoPosition(data) {
+      if (!data.position) {
+        return {
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)'
+        };
+      }
+      
+      return data.position;
+    }
+
+    function createVideoOverlay(data) {
+      console.log('Creating video overlay with data:', data);
+
+      const activeVideos = document.querySelectorAll('.video-overlay');
+      if (activeVideos.length >= MAX_CONCURRENT_VIDEOS) {
+        const oldestVideo = activeVideos[0];
+        console.log('Max concurrent videos reached, removing oldest');
+        if (oldestVideo && oldestVideo.parentNode) {
+          oldestVideo.remove();
+        }
+      }
+
+      const uniqueId = `${data.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      const videoOverlay = document.createElement('div');
+      videoOverlay.className = `video-overlay video-overlay-${data.type} animate__animated`;
+      videoOverlay.id = uniqueId;
+      
+      if (data.animateIn) {
+        videoOverlay.classList.add(`animate__${data.animateIn}`);
+      }
+
+      Object.assign(videoOverlay.style, {
+        position: 'absolute',
+        ...getVideoPosition(data)
+      });
+
+      const video = document.createElement('video');
+      video.className = `custom-video ${data.type}`;
+      
+      const videoUrl = getNormalizedPath(data.video_path);
+      video.src = videoUrl;
+      
+      console.log('Setting video source to:', videoUrl);
+      
+      video.autoplay = true;
+      video.playsInline = true;
+      video.loop = false;
+      video.muted = data.muted || false;
+      video.controls = false;
+
+      if (typeof data.volume === 'string') {
+        video.volume = parseFloat(data.volume);
+      } else if (typeof data.volume === 'number') {
+        video.volume = data.volume;
+      } else {
+        video.volume = 1.0;
+      }
+      
+      if (data.width) video.style.width = data.width;
+      if (data.height) video.style.height = data.height;
+
+      video.addEventListener('error', (e) => {
+        console.error('Error loading video:', e);
+        console.error('Video source:', video.src);
+      });
+
+      video.addEventListener('loadeddata', () => {
+        console.log('Video loaded successfully:', video.src);
+      });
+
+      videoOverlay.dataset.createdAt = Date.now().toString();
+      
+      videoOverlay.appendChild(video);
+      overlayContainer.appendChild(videoOverlay);
+      
+      const displayDuration = data.duration || 10000;
+      console.log(`Video will display for ${displayDuration/1000} seconds`);
+      
+      setTimeout(() => {
+        if (videoOverlay.parentNode) {
+          console.log(`Fading out video after ${displayDuration/1000} seconds`);
+          fadeOutOverlay(videoOverlay, data);
+        }
+      }, displayDuration);
+    }
+
+    function fadeOutOverlay(element, data) {
+      console.log('Fading out overlay:', element);
+      
+      const videos = element.querySelectorAll('video');
+      videos.forEach(video => {
+        try {
+          video.pause();
+          video.loop = false;
+        } catch (e) {
+          console.error('Error pausing video:', e);
+        }
+      });
+      
+      if (data.animateOut) {
+        if (data.animateIn) {
+          element.classList.remove(`animate__${data.animateIn}`);
+        }
+        element.classList.add(`animate__${data.animateOut}`);
+        
+        const removeTimeout = setTimeout(() => {
+          if (element.parentNode) {
+            element.remove();
+          }
+        }, 1500);
+        
+        element.addEventListener('animationend', () => {
+          clearTimeout(removeTimeout);
+          if (element.parentNode) {
+            element.remove();
+          }
+        });
+      } else {
+        element.style.transition = 'opacity 0.5s ease-out';
+        element.style.opacity = '0';
+        setTimeout(() => {
+          if (element.parentNode) {
+            element.remove();
+          }
+        }, 500);
+      }
+    }
+
+    function showImage(data) {
+      console.log('Showing image with URL:', data.url);
+
+      const existingImages = document.querySelectorAll('.image-display-wrapper');
+      existingImages.forEach(img => img.remove());
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'image-display-wrapper animate__animated';
+
+      if (data.animateIn) {
+        wrapper.classList.add(`animate__${data.animateIn}`);
+      }
+
+      if (data.style) {
+        const { position, top, left } = data.style;
+        wrapper.style.position = position;
+        wrapper.style.top = top;
+        wrapper.style.left = left;
+      }
+
+      const img = document.createElement('img');
+      img.className = 'image-display';
+      img.src = FLASK_SERVER + data.url;
+
+      if (data.style) {
+        const { width, height, borderRadius } = data.style;
+        img.style.width = width;
+        img.style.height = height;
+        img.style.borderRadius = borderRadius;
+      }
+
+      img.onerror = function(e) {
+        console.error('Error loading image:', data.url, e);
+      };
+      
+      img.onload = function() {
+        console.log('Image loaded successfully:', data.url);
+        wrapper.style.visibility = 'visible';
+      };
+
+      wrapper.appendChild(img);
+      overlayContainer.appendChild(wrapper);
+
+      if (data.duration) {
+        setTimeout(() => {
+          if (data.animateOut) {
+            if (data.animateIn) {
+              wrapper.classList.remove(`animate__${data.animateIn}`);
+            }
+            wrapper.classList.add(`animate__${data.animateOut}`);
+            wrapper.addEventListener('animationend', () => {
+              wrapper.remove();
+            });
+          } else {
+            wrapper.style.opacity = '0';
+            setTimeout(() => wrapper.remove(), 500);
+          }
+        }, data.duration);
+      }
+    }
+
+    function createTextOverlay(data) {
+      const textEl = document.createElement('div');
+      textEl.className = 'some-custom-text-class animate__animated';
+
+      if (data.animateIn) {
+        textEl.classList.add(`animate__${data.animateIn}`);
+      }
+
+      textEl.textContent = data.content || '';
+      for (const [prop, val] of Object.entries(data.style || {})) {
+        textEl.style[prop] = val;
+      }
+      for (const [prop, val] of Object.entries(data.position || {})) {
+        textEl.style[prop] = val;
+      }
+
+      overlayContainer.appendChild(textEl);
+
+      if (data.duration) {
+        setTimeout(() => {
+          if (data.animateOut) {
+            if (data.animateIn) {
+              textEl.classList.remove(`animate__${data.animateIn}`);
+            }
+            textEl.classList.add(`animate__${data.animateOut}`);
+            textEl.addEventListener('animationend', () => textEl.remove());
+          } else {
+            textEl.style.opacity = '0';
+            setTimeout(() => textEl.remove(), 500);
+          }
+        }, data.duration);
+      }
+    }
+
+    function showVideo(data) {
+      console.log('Showing video in OBS with data:', data);
+      
+      const existingVideos = document.querySelectorAll('.video-display-wrapper');
+      existingVideos.forEach(vid => vid.remove());
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'video-display-wrapper';
+      
+      if (data.animateIn) {
+        wrapper.classList.add('animate__animated', `animate__${data.animateIn}`);
+      }
+      
+      if (data.style) {
+        Object.assign(wrapper.style, data.style);
+      }
+      
+      const video = document.createElement('video');
+      video.className = 'video-display';
+      
+      const videoUrl = getNormalizedPath(data.url);
+      console.log('Setting video URL to:', videoUrl);
+      video.src = videoUrl;
+      
+      video.autoplay = true;
+      video.loop = false;
+      video.muted = true;
+      video.playsInline = true;
+      video.controls = false;
+      
+      Object.assign(video.style, {
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+        display: 'block'
+      });
+      
+      video.onerror = function(e) {
+        console.error('OBS video error:', videoUrl);
+        console.error('Error code:', video.error ? video.error.code : 'unknown');
+      };
+      
+      video.onloadeddata = function() {
+        console.log('Video loaded in OBS:', videoUrl);
+        setTimeout(() => {
+          try {
+            video.muted = false;
+            video.volume = typeof data.volume === 'number' ? data.volume : 0.5;
+            console.log('Unmuted video, volume:', video.volume);
+          } catch (e) {
+            console.error('Error unmuting:', e);
+          }
+        }, 1000);
+      };
+      
+      wrapper.dataset.createdAt = Date.now().toString();
+      
+      wrapper.appendChild(video);
+      overlayContainer.appendChild(wrapper);
+      
+      setTimeout(() => {
+        try {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.error('OBS play error:', error);
+            });
+          }
+        } catch (e) {
+          console.error('Error playing in OBS:', e);
+        }
+      }, 100);
+      
+      const displayDuration = data.duration || 10000;
+      console.log(`Video will display for ${displayDuration/1000} seconds`);
+      
+      setTimeout(() => {
+        console.log(`Fading out show-video after ${displayDuration/1000} seconds`);
+        if (wrapper.parentNode) {
+          if (data.animateOut) {
+            if (data.animateIn) {
+              wrapper.classList.remove(`animate__${data.animateIn}`);
+            }
+            wrapper.classList.add('animate__animated', `animate__${data.animateOut}`);
+            
+            const removeTimeout = setTimeout(() => {
+              if (wrapper.parentNode) {
+                wrapper.remove();
+              }
+            }, 1500);
+            
+            wrapper.addEventListener('animationend', () => {
+              clearTimeout(removeTimeout);
+              if (wrapper.parentNode) {
+                wrapper.remove();
+              }
+            });
+          } else {
+            wrapper.style.opacity = '0';
+            wrapper.style.transition = 'opacity 0.5s ease-out';
+            setTimeout(() => {
+              if (wrapper.parentNode) {
+                wrapper.remove();
+              }
+            }, 500);
+          }
+        }
+      }, displayDuration);
+    }
+
+    ws.onmessage = function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Received websocket data:', data);
+
+        switch(data.type) {
+          case 'text-overlay':
+            console.log('Received text-overlay data:', data);
+            createTextOverlay(data.data);
+            break;
+          case 'show-image':
+            console.log('Received image display data:', data);
+            showImage(data.data);
+            break;
+          case 'show-video':
+            console.log('Received video display data:', data);
+            showVideo(data.data);
+            break;
+          case 'custom_video':
+            console.log('Received video overlay data:', data);
+            createVideoOverlay({
+              type: data.type,
+              video_path: data.data.video_path,
+              randomPosition: data.data.randomPosition,
+              width: data.data.width,
+              height: data.data.height,
+              duration: data.data.duration,
+              position: data.data.position,
+              muted: data.data.muted,
+              animateIn: data.data.animateIn,
+              animateOut: data.data.animateOut,
+              textOverlay: data.data.textOverlay,
+              volume: data.data.volume
+            });
+            break;
+          default:
+            console.log('Unknown message type:', data.type);
+        }
+      } catch (error) {
+        console.error('Error processing message:', error);
+      }
+    };
+
+    ws.onopen = function() {
+      console.log('WebSocket connection established');
+    };
+
+    ws.onclose = function() {
+      console.log('WebSocket connection closed. Attempting to reconnect...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
+    };
+
+    ws.onerror = function(error) {
+      console.error('WebSocket error:', error);
+    };
+  </script>
+</body>
+</html>

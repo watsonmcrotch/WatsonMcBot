@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Overlay Large</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: transparent;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #chat-container {
+            position: fixed;
+            bottom: 0px;
+            left: 0px;
+            width: 35%;
+            min-width: 600px;
+            max-width: 600px;
+            max-height: 100vh;
+            overflow-y: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px;
+            transition: all 0.5s ease;
+        }
+
+        .chat-message {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 16px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            word-break: break-word;
+            overflow-wrap: break-word;
+            width: 100%;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .username {
+            font-weight: 700;
+            font-size: 20px;
+            margin-bottom: 6px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .original-name {
+            font-weight: 600;
+            font-size: 16px;
+            opacity: 0.7;
+        }
+
+        .message-text {
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            color: #ffffff;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+            display: inline;
+            gap: 4px;
+        }
+
+        .emote {
+            display: inline-block;
+            vertical-align: middle;
+            height: 30px;
+            margin: 0 3px;
+        }
+
+        .emote img {
+            height: 100%;
+            width: auto;
+        }
+
+        .fade-out {
+            opacity: 0 !important;
+            transition: opacity 1s ease-out !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const MAX_MESSAGES = 10;
+        const MESSAGE_LIFETIME = 30000;
+        const RECONNECT_INTERVAL = 3000;
+        const MAX_RECONNECT_ATTEMPTS = 10;
+        
+        let ws = null;
+        let reconnectAttempts = 0;
+        let isConnected = false;
+        let reconnectTimeout = null;
+
+        function createMessageContent(fragments) {
+            const contentEl = document.createElement('div');
+            contentEl.className = 'message-text';
+
+            fragments.forEach(part => {
+                if (part.type === 'text') {
+                    const textNode = document.createTextNode(part.content);
+                    contentEl.appendChild(textNode);
+                } else if (part.type === 'twitch_emote' || part.type === '7tv_emote') {
+                    const emoteContainer = document.createElement('div');
+                    emoteContainer.className = 'emote';
+                    
+                    const img = document.createElement('img');
+                    img.src = part.url;
+                    img.alt = part.name;
+                    img.title = part.name;
+                    if (part.animated) {
+                        img.style.imageRendering = 'crisp-edges';
+                    }
+                    
+                    img.onerror = function() {
+                        const textNode = document.createTextNode(part.name);
+                        if (emoteContainer.parentNode) {
+                            emoteContainer.parentNode.replaceChild(textNode, emoteContainer);
+                        }
+                    };
+                    
+                    emoteContainer.appendChild(img);
+                    contentEl.appendChild(emoteContainer);
+                }
+            });
+
+            return contentEl;
+        }
+
+        function addChatMessage(username, displayName, message, userColor, fragments) {
+            try {
+                cleanupOldMessages();
+
+                const messageEl = document.createElement('div');
+                messageEl.className = 'chat-message animate__animated animate__fadeInLeft';
+                
+                const isActionMessage = fragments.length > 0 && 
+                                      fragments[0].type === 'text' && 
+                                      fragments[0].content.includes('ACTION');
+                
+                if (isActionMessage) {
+                    let lastTextFragment = fragments[fragments.length - 1];
+                    if (lastTextFragment.type === 'text') {
+                        lastTextFragment.content = lastTextFragment.content.replace('\x01', '').trim();
+                    }
+
+                    const usernameEl = document.createElement('div');
+                    usernameEl.className = 'username';
+                    
+                    const displayNameEl = document.createElement('span');
+                    displayNameEl.textContent = displayName;
+                    displayNameEl.style.color = userColor;
+                    usernameEl.appendChild(displayNameEl);
+                    
+                    if (displayName !== username) {
+                        const originalNameEl = document.createElement('span');
+                        originalNameEl.className = 'original-name';
+                        originalNameEl.textContent = `(${username})`;
+                        usernameEl.appendChild(originalNameEl);
+                    }
+
+                    fragments[0].content = fragments[0].content.replace(/.ACTION\s*/, '');
+                    
+                    messageEl.appendChild(usernameEl);
+                } else {
+                    const usernameEl = document.createElement('div');
+                    usernameEl.className = 'username';
+                    
+                    const displayNameEl = document.createElement('span');
+                    displayNameEl.textContent = displayName;
+                    displayNameEl.style.color = userColor;
+                    usernameEl.appendChild(displayNameEl);
+                    
+                    if (displayName !== username) {
+                        const originalNameEl = document.createElement('span');
+                        originalNameEl.className = 'original-name';
+                        originalNameEl.textContent = `(${username})`;
+                        usernameEl.appendChild(originalNameEl);
+                    }
+                    
+                    messageEl.appendChild(usernameEl);
+                }
+
+                const messageContent = createMessageContent(fragments);
+                messageEl.appendChild(messageContent);
+                
+                chatContainer.appendChild(messageEl);
+                
+                messageEl.style.opacity = '1';
+                messageEl.style.transform = 'translateX(0)';
+
+                setTimeout(() => {
+                    if (messageEl && messageEl.parentNode) {
+                        messageEl.classList.add('fade-out');
+                        setTimeout(() => {
+                            if (messageEl && messageEl.parentNode) {
+                                messageEl.remove();
+                            }
+                        }, 1000);
+                    }
+                }, MESSAGE_LIFETIME);
+
+            } catch (error) {
+                console.error('Error adding chat message:', error);
+            }
+        }
+
+        function cleanupOldMessages() {
+            const messages = chatContainer.children;
+            if (messages.length >= MAX_MESSAGES) {
+                const toRemove = messages.length - MAX_MESSAGES + 1;
+                for (let i = 0; i < toRemove; i++) {
+                    if (messages[0]) {
+                        messages[0].remove();
+                    }
+                }
+            }
+        }
+
+        function connectWebSocket() {
+            if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+                return;
+            }
+
+            try {
+                const wsToken = new URLSearchParams(window.location.search).get('token') || '';
+                ws = new WebSocket(`ws://localhost:8555?token=${wsToken}`);
+                
+                ws.onopen = function() {
+                    console.log('WebSocket connected');
+                    isConnected = true;
+                    reconnectAttempts = 0;
+                    
+                    if (reconnectTimeout) {
+                        clearTimeout(reconnectTimeout);
+                        reconnectTimeout = null;
+                    }
+                };
+                
+                ws.onclose = function(event) {
+                    console.log('WebSocket disconnected:', event.code);
+                    isConnected = false;
+                    
+                    if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        scheduleReconnect();
+                    }
+                };
+
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'chat-message') {
+                            addChatMessage(
+                                data.data.username,
+                                data.data.displayName,
+                                data.data.message,
+                                data.data.userColor,
+                                data.data.fragments
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Error processing message:', error);
+                    }
+                };
+
+                ws.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    isConnected = false;
+                };
+
+            } catch (error) {
+                console.error('Failed to create WebSocket:', error);
+                scheduleReconnect();
+            }
+        }
+
+        function scheduleReconnect() {
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+
+            reconnectAttempts++;
+            const delay = RECONNECT_INTERVAL * Math.min(reconnectAttempts, 3);
+
+            reconnectTimeout = setTimeout(() => {
+                if (!isConnected) {
+                    connectWebSocket();
+                }
+            }, delay);
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+            if (ws) {
+                ws.close(1000, 'Page unloading');
+            }
+        });
+
+        connectWebSocket();
+    </script>
+</body>
+</html>

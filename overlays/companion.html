@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WatsonMcBot Companion</title>
+    <style>
+        :root {
+            --border: #1A1D24;
+            --border-light: #2A3040;
+            --screen: #0A0E14;
+            --eye: #0bbfad;
+            --eye-glow: rgba(39, 207, 173, 0.4);
+            --love-heart: #ff3366;
+            --love-glow: rgba(255, 51, 102, 0.4);
+
+            transition: --eye 0.5s ease-in-out, 
+                        --eye-glow 0.5s ease-in-out,
+                        --border 0.5s ease-in-out,
+                        --border-light 0.5s ease-in-out,
+                        --screen 0.5s ease-in-out;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: transparent;
+        }
+
+        .scene {
+            position: fixed;
+            bottom: 20px;
+            right: 40px;
+            width: 210px;
+            height: 160px;
+            transform-style: preserve-3d;
+            perspective: 1200px;
+        }
+
+        .monitor {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--border) 0%, var(--border-light) 50%, var(--border) 100%);
+            border-radius: 24px;
+            transform-style: preserve-3d;
+            transform: rotateX(5deg);
+            animation: monitor-float 8s ease-in-out infinite;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.4),
+                inset 0 2px 15px rgba(255, 255, 255, 0.1),
+                inset 0 -2px 15px rgba(0, 0, 0, 0.3),
+                0 0 40px rgba(9, 237, 199, 0.1);
+            transition: background-color 0.5s ease-in-out,
+                        box-shadow 0.5s ease-in-out;
+        }
+
+        .screen {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            right: 18px;
+            bottom: 18px;
+            background: var(--screen);
+            border-radius: 16px;
+            overflow: hidden;
+            transform: translateZ(2px);
+            box-shadow: 
+                inset 0 0 50px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(9, 237, 199, 0.15);
+            transition: background-color 0.5s ease-in-out,
+                        box-shadow 0.5s ease-in-out;
+        }
+
+        .display-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .eyes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .eyes, .typing {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .eye {
+            width: 34px;
+            height: 50px;
+            background: var(--eye);
+            border-radius: 50%;
+            position: relative;
+            filter: brightness(1.2);
+            box-shadow: 
+                0 0 15px rgba(9, 237, 199, 0.4),
+                0 0 30px rgba(9, 237, 199, 0.2);
+            animation: eye-glow 4s ease-in-out infinite;
+            transform: none;
+            transition: background-color 0.5s ease-in-out, 
+                        box-shadow 0.5s ease-in-out;
+        }
+
+        .eye::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 9px;
+            width: 12px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            filter: blur(1px);
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .typing {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .typing.active {
+            opacity: 1;
+        }
+
+        .typing.active + .eyes {
+            opacity: 0;
+        }
+
+        .typing-dot {
+            height: 30px;
+            width: 75px; /* aspect-ratio: 2.5 = 30px * 2.5 */
+            --_g: no-repeat radial-gradient(farthest-side, var(--eye) 90%, transparent);
+            background: 
+                var(--_g),
+                var(--_g),
+                var(--_g),
+                var(--_g);
+            background-size: 20% 50%;
+            animation: typing-bounce 1s infinite linear;
+            filter: drop-shadow(0 0 10px var(--eye-glow));
+        }
+
+        .monitor.pong .eyes {
+            opacity: 0;
+        }
+
+        .monitor.pong .display-container::before {
+            content: "";
+            position: absolute;
+            width: 200px;
+            height: 130px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid var(--eye);
+            box-shadow: 0 0 15px var(--eye-glow);
+        }
+
+        .monitor.pong .display-container .pong-field {
+            position: absolute;
+            width: 190px;
+            height: 130px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .monitor.pong .display-container .pong-net {
+            width: 0;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 1px;
+            border-style: solid;
+            border-color: var(--eye);
+        }
+
+        .monitor.pong .display-container .ping,
+        .monitor.pong .display-container .pong-paddle {
+            width: 6px;
+            height: 24px;
+            position: absolute;
+            background: var(--eye);
+            box-shadow: 0 0 10px var(--eye-glow);
+        }
+
+        .monitor.pong .display-container .ping {
+            left: 6%;
+            animation: ping 6s infinite linear;
+        }
+
+        .monitor.pong .display-container .pong-paddle {
+            right: 6%;
+            animation: pong 6s infinite linear;
+        }
+
+        .monitor.pong .display-container .ball {
+            width: 6px;
+            height: 6px;
+            position: absolute;
+            background: var(--eye);
+            box-shadow: 0 0 10px var(--eye-glow);
+            animation: ball 6s infinite linear;
+        }
+
+        .monitor.surprised .eyes {
+            opacity: 0;
+        }
+
+        .monitor.surprised .display-container::before {
+            content: "❗";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            font-size: 3.5em;
+            filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.4));
+            animation: surprised-pop 1s cubic-bezier(0.2, 0, 0.4, 1) forwards;
+        }
+
+        .monitor.happy .eyes {
+            opacity: 0;
+        }
+
+        .monitor.happy .display-container::before {
+            content: "😊";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5em;
+            animation: happy-bounce 2s ease-in-out infinite;
+        }
+
+        .monitor.newgame .eyes {
+            opacity: 0;
+        }
+
+        .monitor.wingame .eyes {
+            opacity: 0;
+        }
+
+        .monitor.cool .eyes {
+            opacity: 0;
+        }
+
+        .monitor.cool .display-container::before {
+            content: "😎";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5em;
+            animation: cool-bounce 2s ease-in-out infinite;
+        }
+
+        .monitor.newgame .display-container::before {
+            content: "⚠️";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            font-size: 3.5em;
+            filter: drop-shadow(0 0 10px rgba(255, 204, 0, 0.4));
+            animation: newgame-pop 2s ease-out forwards;
+            z-index: 2;
+        }
+
+        .monitor.newgame .display-container::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 204, 0, 0.2);
+            transform: translate(-50%, -50%);
+            animation: newgame-glow 2s ease-out forwards;
+        }
+
+        .monitor.wingame .display-container::before,
+        .monitor.wingame .display-container::after {
+            content: "🏆";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            filter: brightness(1.2);
+            text-shadow: 0 0 15px rgba(229, 167, 58, 0.4);
+        }
+
+        .monitor.wingame .display-container::after {
+            animation: wingame-cup 2.5s infinite;
+            transform: translate(-50%, -50%) perspective(300px) translateZ(0px);
+            opacity: 0.5;
+        }
+
+        .monitor.timesup .eyes {
+            opacity: 0;
+        }
+
+        .monitor.timesup .display-container::before,
+        .monitor.timesup .display-container::after {
+            content: "❌";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.8em;
+            filter: brightness(1.2);
+            filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.4));
+        }
+
+        .monitor.timesup .display-container::after {
+            animation: timesup-shake 1s infinite;
+            opacity: 0.5;
+        }
+
+        .monitor.heart .eyes {
+            opacity: 0;
+        }
+
+        .monitor.heart .display-container::before {
+            content: '❤';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            color: var(--love-heart);
+            filter: brightness(1.2);
+            animation: heart-beat 2s linear infinite;
+            text-shadow: 0 0 15px var(--heart-glow);
+            z-index: 2;
+        }
+
+        .monitor.heart .display-container::after {
+            content: '❤';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            color: var(--love-heart);
+            filter: brightness(1.2);
+            animation: heart-echo 2s linear infinite;
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        .scanlines {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(17, 22, 21, 0.267) 51%,
+                rgba(0, 0, 0, 0.2) 52%,
+                transparent 53%
+            );
+            background-size: 100% 4px;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.7;
+            mix-blend-mode: overlay;
+        }
+
+        .monitor.laugh .eyes {
+            opacity: 1;
+        }
+
+        .monitor.laugh .eye {
+            animation: eye-laugh 1s ease-in-out infinite;
+            border-radius: 50% 50% 0 0;
+        }
+
+        .monitor.laugh .eye::before {
+            top: 4px;
+        }
+
+        .gif-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            z-index: 2;
+        }
+
+        .gif-container img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .monitor.show-gif .eyes {
+            opacity: 0;
+        }
+
+        .monitor.show-gif .gif-container {
+            display: block;
+        }
+
+        .monitor.rizz .display-container::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200%;
+            height: 200%;
+            background-image: url('./assets/images/rizz-face.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: brightness(1.2);
+        }
+
+        .monitor.confession .eyes {
+        opacity: 0;
+
+        }
+
+        .monitor.confession .display-container::before,
+        .monitor.confession .display-container::after {
+            content: "🔔";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5em;
+            filter: brightness(1.2);
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .monitor.confession .display-container::after {
+            animation: confession-bell 2s infinite;
+            transform: translate(-50%, -50%) perspective(300px) translateZ(0px);
+            opacity: 0.5;
+        }
+        .monitor.hydrate .eyes {
+            opacity: 0;
+        }
+
+        .monitor.hydrate .display-container::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            --r1: 154%;
+            --r2: 68.5%;
+            background:
+                radial-gradient(var(--r1) var(--r2) at top, #0000 79.5%, var(--eye) 80%),
+                radial-gradient(var(--r1) var(--r2) at bottom, var(--eye) 79.5%, #0000 80%),
+                radial-gradient(var(--r1) var(--r2) at top, #0000 79.5%, var(--eye) 80%),
+                #2A3040;
+            background-size: 50.5% 220%;
+            background-position: -100% 0%, 0% 0%, 100% 0%;
+            background-repeat: no-repeat;
+            animation: hydrate-loader 2s infinite linear;
+            filter: drop-shadow(0 0 10px var(--eye-glow));
+        }
+
+        .monitor.success .eyes {
+            opacity: 0;
+        }
+
+        .monitor.success .display-container::before,
+        .monitor.success .display-container::after {
+            content: "✔";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -55%);
+            font-size: 3.8em;
+            color: #27bb65 !important;
+            -webkit-text-fill-color: #2ecc71;
+            filter: drop-shadow(0 0 10px rgba(40, 200, 40, 0.6));
+        }
+
+        .monitor.success .display-container::after {
+            animation: success-pop 1.5s ease-out forwards;
+            opacity: 0.5;
+        }
+
+        .monitor.loading .eyes {
+            opacity: 0;
+        }
+
+        .monitor.loading .display-container::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 16px;
+            background: transparent;
+            border-radius: 8px;
+            border: 2px solid var(--eye);
+            box-shadow: 0 0 10px var(--eye-glow);
+            overflow: hidden;
+        }
+
+        .monitor.loading .display-container::after {
+            content: "";
+            position: absolute;
+            width: calc(100% - 4px); 
+            height: 11px;
+            top: 50%;
+            left: 2px;
+            transform: translateY(-50%);
+            border-radius: 6px;
+            background: var(--eye);
+            transform-origin: left;
+            animation: loading-progress 3s infinite ease-in-out;
+            box-shadow: 0 0 10px var(--eye-glow);
+        }
+
+        .monitor.thinking .eyes {
+            opacity: 0;
+        }
+
+        .monitor.thinking .display-container::before,
+        .monitor.thinking .display-container::after {
+            content: "🤔";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5em;
+            filter: brightness(1.2);
+            text-shadow: 0 0 15px rgba(11, 191, 173, 0.4);
+        }
+
+        .monitor.thinking .display-container::after {
+            animation: thinking-bounce 2s infinite ease-in-out;
+            opacity: 0.5;
+        }
+
+        .monitor.brb .eyes {
+            opacity: 0;
+        }
+
+        .monitor.brb .display-container::before {
+            content: "💤";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5em;
+            filter: brightness(1.2);
+            animation: brb-float 4s ease-in-out infinite;
+        }
+
+        .monitor.paint .eyes {
+            opacity: 0;
+        }
+
+        .monitor.paint .display-container::before {
+            content: "🖌️";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -40%);
+            font-size: 4.2em;
+            filter: brightness(1.2);
+            animation: paint-float 6s ease-in-out infinite;
+        }
+
+        .monitor.music .eyes {
+            opacity: 0;
+        }
+
+        .monitor.music .display-container::before {
+            content: "♫";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -40%);
+            font-size: 4.6em;
+            color: #27bb96 !important;
+            -webkit-text-fill-color: #2eccb2;
+            filter: drop-shadow(0 0 10px rgba(40, 200, 165, 0.6));
+            animation: music-float 6s ease-in-out infinite;
+        }
+
+        .monitor.wave .eyes {
+            opacity: 0;
+        }
+
+        .monitor.wave .display-container::before {
+            content: "👋";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4.2em;
+            filter: brightness(1.2);
+            transform-origin: 75% 75%;
+            animation: wave-animation 3s ease-in-out;
+        }
+
+        .monitor.eww .eyes {
+            opacity: 0;
+        }
+
+        .monitor.eww .display-container::before,
+        .monitor.eww .display-container::after {
+            content: "🤢";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5em;
+            filter: brightness(1.2);
+        }
+
+        .monitor.eww .display-container::after {
+            animation: eww-shake 2s infinite ease-in-out;
+            opacity: 0.5;
+        }
+
+        .monitor.okay .eyes {
+            opacity: 0;
+        }
+
+        .monitor.okay .display-container::before,
+        .monitor.okay .display-container::after {
+            content: "😶";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5em;
+            filter: brightness(1.2);
+        }
+
+        .monitor.okay .display-container::after {
+            animation: okay-float 2s infinite ease-in-out;
+            opacity: 0.4;
+        }
+
+        .monitor.nice .eyes {
+            opacity: 0;
+        }
+
+        .monitor.nice .display-container::before,
+        .monitor.nice .display-container::after {
+            content: "👌";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-20deg);
+            font-size: 4em;
+            filter: brightness(1.2);
+        }
+
+        .monitor.nice .display-container::before {
+            animation: nice-rotate 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .monitor.nice .display-container::after {
+            opacity: 0.4;
+            animation: nice-rotate-shadow 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .monitor.spud .eyes {
+            opacity: 0;
+        }
+
+        .monitor.spud .display-container::before {
+            content: "🥔";
+            position: absolute;
+            top: 50%;
+            left: 48%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            animation: spud-float 2s infinite ease-in-out;
+        }
+
+        .monitor.spud .display-container::after {
+            content: "🩷";
+            position: absolute;
+            top: 8%;
+            left: 75%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5em;
+            animation: spud-heart 2s infinite ease-in-out;
+        }
+
+        .monitor.pet .eyes {
+            opacity: 0;
+        }
+
+        .monitor.pet .display-container::before {
+            content: "🫳";
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            font-size: 3em;
+            filter: brightness(1.2);
+            animation: pet-hand 2.5s ease-in-out;
+        }
+
+        .monitor.pet .display-container::after {
+            content: "😊";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 3.5em;
+            filter: brightness(1.2);
+            animation: pet-blush 2.5s ease-in-out;
+        }
+
+        .monitor.feed .eyes {
+            opacity: 0;
+        }
+
+        .monitor.feed .display-container::before {
+            content: "🍕";
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translate(-50%, -100%);
+            font-size: 2.5em;
+            filter: brightness(1.2);
+            animation: feed-drop 2s ease-out;
+        }
+
+        .monitor.feed .display-container::after {
+            content: "😋";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5em;
+            filter: brightness(1.2);
+        }
+
+        .monitor.slap .eyes {
+            opacity: 0;
+        }
+
+        .monitor.slap .display-container::before {
+            content: "💥";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 4.5em;
+            filter: brightness(1.2);
+            animation: slap-impact 1.5s ease-out;
+            color: #ff6b6b;
+        }
+
+        .monitor.slap .display-container::after {
+            content: "😵";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5em;
+            filter: brightness(1.2);
+            animation: slap-dizzy 1.5s ease-out;
+        }
+
+        .monitor.kiss .eyes {
+            opacity: 0;
+        }
+
+        .monitor.kiss .display-container::before {
+            content: "💋";
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, 0) scale(0);
+            font-size: 2.5em;
+            filter: brightness(1.2);
+            animation: kiss-smooch 3s ease-out;
+            color: #ff69b4;
+        }
+
+        .monitor.kiss .display-container::after {
+            content: "😍";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 3.5em;
+            filter: brightness(1.2);
+            animation: kiss-love 3s ease-in-out;
+        }
+
+        .monitor.fight {
+            --eye: #ff4040;
+            --eye-glow: rgba(255, 64, 64, 0.4);
+            --border: #241a1a;
+            --border-light: #402a2a;
+            --screen: #140a0a;
+        }
+
+        .monitor.fight .eye {
+            box-shadow: 
+                0 0 15px rgba(255, 64, 64, 0.4),
+                0 0 30px rgba(255, 64, 64, 0.2);
+            transition: box-shadow 0.5s ease-in-out;
+        }
+
+        .monitor.fight .eye::after {
+            content: '';
+            position: absolute;
+            width: 120%;
+            height: 4px;
+            background: #ff4040;
+            bottom: 100%;
+            left: -10%;
+            border-radius: 3px;
+            transform: translateY(-10px) rotate(25deg);
+            transform-origin: right center;
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            animation: angry-brow-left 0.3s ease-out forwards;
+        }
+
+        .monitor.fight .eye:last-child::after {
+            transform: translateY(-10px) rotate(-25deg);
+            transform-origin: left center;
+            animation: angry-brow-right 0.3s ease-out forwards;
+        }
+
+        .monitor.fight .eye.blinking::after {
+            opacity: 0.9 !important;
+            transform: translateY(0) rotate(25deg) !important;
+        }
+
+        .monitor.fight .eye:last-child.blinking::after {
+            transform: translateY(0) rotate(-25deg) !important;
+        }
+
+        @keyframes angry-brow-left {
+            0% {
+                transform: translateY(-10px) rotate(25deg);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0) rotate(25deg);
+                opacity: 0.9;
+            }
+        }
+
+        @keyframes angry-brow-right {
+            0% {
+                transform: translateY(-10px) rotate(-25deg);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0) rotate(-25deg);
+                opacity: 0.9;
+            }
+        }
+
+        @keyframes monitor-float {
+            0% { 
+                transform: rotateX(5deg) rotateY(-2deg) rotateZ(-1deg) translateY(0);
+            }
+            50% { 
+                transform: rotateX(6deg) rotateY(2deg) rotateZ(1deg) translateY(-8px);
+            }
+            100% { 
+                transform: rotateX(5deg) rotateY(-2deg) rotateZ(-1deg) translateY(0);
+            }
+        }
+
+        @keyframes eye-laugh {
+            0%, 100% { 
+                transform: scaleY(0.4) scaleX(1);
+                border-radius: 50% 50% 0 0;
+                height: 30px;
+                margin-top: 10px;
+            }
+            50% { 
+                transform: scaleY(0.3) scaleX(1.1);
+                border-radius: 50% 50% 0 0;
+                height: 25px;
+                margin-top: 15px;
+            }
+        }
+
+        @keyframes eye-glow {
+            0%, 100% { filter: brightness(1.2); }
+            50% { filter: brightness(1.3); }
+        }
+
+        @keyframes blink {
+            0%, 20%, 100% { transform: scaleY(1); }
+            35% { transform: scaleY(0.7); }
+            45% { transform: scaleY(0.3); }
+            50% { transform: scaleY(0.0); }
+            55% { transform: scaleY(0.3); }
+            65% { transform: scaleY(0.7); }
+            80%, 100% { transform: scaleY(1); }
+        }
+
+        @keyframes doubleBlink {
+            0%, 20% { transform: scaleY(1); }
+            35% { transform: scaleY(0.7); }
+            45% { transform: scaleY(0.3); }
+            50% { transform: scaleY(0.0); }
+            55% { transform: scaleY(0.3); }
+            65% { transform: scaleY(0.7); }
+            70% { transform: scaleY(1); }
+            75% { transform: scaleY(0.7); }
+            80% { transform: scaleY(0.3); }
+            82% { transform: scaleY(0.0); }
+            84% { transform: scaleY(0.3); }
+            86% { transform: scaleY(0.7); }
+            90%, 100% { transform: scaleY(1); }
+        }
+
+        @keyframes wingame-cup {
+           to {
+                transform: translate(-50%, -50%) perspective(300px) translateZ(150px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes ball {
+            0% {
+                top: 34%;
+                left: 52%;
+            }
+            8.3% {
+                top: 52%;
+                left: 90%;
+            }
+            24.9% {
+                top: 85%;
+                left: 8%;
+            }
+            30% {
+                top: 94%;
+                left: 27%;
+            }
+            41.5% {
+                top: 70%;
+                left: 90%;
+            }
+            58.1% {
+                top: 55%;
+                left: 8%;
+            }
+            74.7% {
+                top: 13%;
+                left: 90%;
+            }
+            79% {
+                top: 1%;
+                left: 70%;
+            }
+            91.3% {
+                top: 22%;
+                left: 8%;
+            }
+            100% {
+                top: 34%;
+                left: 52%;
+            }
+        }
+
+        @keyframes ping {
+            0% {
+                top: 10%;
+            }
+            5% {
+                top: 10%;
+            }
+            9% {
+                top: 24%;
+            }
+            13% {
+                top: 17%;
+            }
+            24.9% {
+                top: 82%;
+            }
+            47% {
+                top: 37%;
+            }
+            52% {
+                top: 41%;
+            }
+            56% {
+                top: 64%;
+            }
+            58.1% {
+                top: 54%;
+            }
+            70% {
+                top: 74%;
+            }
+            84% {
+                top: 12%;
+            }
+            91.3% {
+                top: 18%;
+            }
+            100% {
+                top: 10%;
+            }
+        }
+
+        @keyframes pong {
+            0% {
+                top: 90%;
+            }
+            8.3% {
+                top: 51%;
+            }
+            20% {
+                top: 60%;
+            }
+            25% {
+                top: 34%;
+            }
+            41.5% {
+                top: 68%;
+            }
+            46% {
+                top: 36%;
+            }
+            52% {
+                top: 18%;
+            }
+            58.1% {
+                top: 53%;
+            }
+            66% {
+                top: 14%;
+            }
+            70% {
+                top: 20%;
+            }
+            74.7% {
+                top: 10%;
+            }
+            91.3% {
+                top: 10%;
+            }
+            100% {
+                top: 90%;
+            }
+        }
+
+        @keyframes surprised-pop {
+            0% { 
+                transform: translate(-50%, -60%) scale(0);
+            }
+            50% { 
+                transform: translate(-50%, -60%) scale(1.2);
+            }
+            75% { 
+                transform: translate(-50%, -60%) scale(0.9);
+            }
+            100% { 
+                transform: translate(-50%, -60%) scale(1);
+            }
+        }
+
+        @keyframes happy-bounce {
+            0%, 100% { transform: translate(-50%, -50%); }
+            50% { transform: translate(-50%, -50%); }
+        }
+
+        @keyframes cool-bounce {
+            0%, 100% { transform: translate(-50%, -50%); }
+            50% { transform: translate(-50%, -50%); }
+        }
+
+        @keyframes newgame-pop {
+            0% { 
+                transform: translate(-50%, -60%) scale(0);
+            }
+            25% { 
+                transform: translate(-50%, -60%) scale(1.3);
+            }
+            45% { 
+                transform: translate(-50%, -60%) scale(0.9);
+            }
+            65% { 
+                transform: translate(-50%, -60%) scale(1.1);
+            }
+            85% { 
+                transform: translate(-50%, -60%) scale(0.95);
+            }
+            100% { 
+                transform: translate(-50%, -60%) scale(1);
+            }
+        }
+
+        @keyframes newgame-glow {
+            0% { 
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0.5;
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes wingame-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes typing-bounce {
+            0%     {background-position: calc(0*100%/3) 50% ,calc(1*100%/3) 50% ,calc(2*100%/3) 50% ,calc(3*100%/3) 50% }
+            16.67% {background-position: calc(0*100%/3) 0   ,calc(1*100%/3) 50% ,calc(2*100%/3) 50% ,calc(3*100%/3) 50% }
+            33.33% {background-position: calc(0*100%/3) 100%,calc(1*100%/3) 0   ,calc(2*100%/3) 50% ,calc(3*100%/3) 50% }
+            50%    {background-position: calc(0*100%/3) 50% ,calc(1*100%/3) 100%,calc(2*100%/3) 0   ,calc(3*100%/3) 50% }
+            66.67% {background-position: calc(0*100%/3) 50% ,calc(1*100%/3) 50% ,calc(2*100%/3) 100%,calc(3*100%/3) 0   }
+            83.33% {background-position: calc(0*100%/3) 50% ,calc(1*100%/3) 50% ,calc(2*100%/3) 50% ,calc(3*100%/3) 100%}
+            100%   {background-position: calc(0*100%/3) 50% ,calc(1*100%/3) 50% ,calc(2*100%/3) 50% ,calc(3*100%/3) 50% }
+        }
+
+        @keyframes timesup-shake {
+            0%, 70%, 100% { transform: translate(-50%, -50%) rotate(0); }
+            75%, 85%, 95% { transform: translate(-50%, -53%) rotate(10deg); }
+            80%, 90%      { transform: translate(-50%, -53%) rotate(-10deg); }
+        }
+
+        @keyframes timesup-glow {
+            0%, 100% { box-shadow: 0 0 20px var(--eye-glow); }
+            50% { box-shadow: 0 0 40px var(--eye-glow); }
+        }
+
+        @keyframes success-pop {
+            0% { 
+                transform: translate(-50%, -55%) scale(0.8);
+                opacity: 0.5;
+            }
+            50% { 
+                transform: translate(-50%, -55%) scale(1.2);
+                opacity: 0.3;
+            }
+            100% { 
+                transform: translate(-50%, -55%) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes heart-beat {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            25% { transform: translate(-50%, -50%) scale(1.1); }
+            40% { transform: translate(-50%, -50%) scale(0.9); }
+            60% { transform: translate(-50%, -50%) scale(1.1); }
+            75% { transform: translate(-50%, -50%) scale(0.9); }
+        }
+
+        @keyframes heart-echo {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.4);
+                opacity: 0.3;
+            }
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.7; }
+            100% { opacity: 0.8; }
+        }
+
+        @keyframes hydrate-loader {
+            33% {background-position: 0% 33%, 100% 33%, 200% 33% }
+            66% {background-position: -100% 66%, 0% 66%, 100% 66% }
+            100% {background-position: 0% 100%, 100% 100%, 200% 100%}
+        }
+
+        @keyframes loading-progress {
+            0% {
+                transform: translateY(-50%) scaleX(0);
+            }
+            91.67% {
+                transform: translateY(-50%) scaleX(1);
+            }
+            100% {
+                transform: translateY(-50%) scaleX(1);
+            }
+        }
+
+        @keyframes thinking-bounce {
+            0%, 100% {
+                transform: translate(-50%, -50%) rotate(-5deg);
+            }
+            50% {
+                transform: translate(-50%, -50%) rotate(5deg);
+            }
+        }
+
+        @keyframes confession-bell {
+            0% {
+                transform: translate(-50%, -50%) perspective(300px) translateZ(0px) rotate(0deg);
+            }
+            25% {
+                transform: translate(-50%, -50%) perspective(300px) translateZ(50px) rotate(15deg);
+            }
+            75% {
+                transform: translate(-50%, -50%) perspective(300px) translateZ(50px) rotate(-15deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) perspective(300px) translateZ(150px) rotate(0deg);
+                opacity: 0;
+            }   
+        }
+
+        @keyframes wave-animation {
+            0% { 
+                transform: translate(-60%, -55%) rotate(0deg);
+            }
+            10% { 
+                transform: translate(-60%, -55%) rotate(20deg);
+            }
+            20% { 
+                transform: translate(-60%, -55%) rotate(-10deg);
+            }
+            30% { 
+                transform: translate(-60%, -55%) rotate(20deg);
+            }
+            40% { 
+                transform: translate(-60%, -55%) rotate(-10deg);
+            }
+            50% { 
+                transform: translate(-60%, -55%) rotate(20deg);
+            }
+            60% { 
+                transform: translate(-60%, -55%) rotate(-10deg);
+            }
+            70% { 
+                transform: translate(-60%, -55%) rotate(20deg);
+            }
+            80% { 
+                transform: translate(-60%, -55%) rotate(-10deg);
+            }
+            90% { 
+                transform: translate(-60%, -55%) rotate(0deg);
+            }
+            100% { 
+                transform: translate(-60%, -55%) rotate(0deg);
+            }
+        }
+
+        @keyframes brb-float {
+            0%, 100% { 
+                transform: translate(-50%, -55%) rotate(-5deg);
+            }
+            50% { 
+                transform: translate(-50%, -55%) rotate(5deg) translateY(-10px);
+            }
+        }
+
+        @keyframes paint-float {
+            0%, 100% { 
+                transform: translate(-50%, -55%) rotate(-5deg);
+            }
+            50% { 
+                transform: translate(-50%, -55%) rotate(5deg) translateY(-10px);
+            }
+        }
+
+        @keyframes music-float {
+            0%, 100% { 
+                transform: translate(-50%, -40%) rotate(-5deg);
+            }
+            25% { 
+                transform: translate(-50%, -40%) rotate(5deg) translateY(-10px);
+            }
+            50% { 
+                transform: translate(-50%, -40%) rotate(-5deg)
+            }
+            100% { 
+                transform: translate(-50%, -40%) rotate(5deg) translateY(-10px);
+            }
+        }
+
+        @keyframes nice-rotate {
+            0% {
+                transform: translate(-50%, -50%) rotate(-20deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(10deg);
+            }
+        }
+
+        @keyframes eww-shake {
+            0%, 100% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            25% {
+                transform: translate(-50%, -50%) rotate(-10deg);
+            }
+            75% {
+                transform: translate(-50%, -50%) rotate(10deg);
+            }
+        }
+
+        @keyframes okay-float {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 0.2;
+            }
+        }
+
+        @keyframes nice-rotate-shadow {
+            0% {
+                transform: translate(-50%, -50%) rotate(-20deg);
+                opacity: 0.4;
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(10deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes spud-float {
+                0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+
+        @keyframes spud-heart {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.3);
+            }
+        }
+
+        @keyframes pet-hand {
+            0% {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            16% {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+            28%, 44%, 60% {
+                transform: translate(-50%, -5%);
+            }
+            36%, 52%, 68% {
+                transform: translate(-50%, 5%);
+            }
+            76% {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pet-blush {
+            0%, 75% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            85% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
+            90%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes feed-drop {
+            0% {
+                transform: translate(-50%, -100%) rotate(-10deg);
+                opacity: 0;
+            }
+            30% {
+                transform: translate(-50%, 50%) rotate(10deg);
+                opacity: 1;
+            }
+            60% {
+                transform: translate(-50%, 80%) rotate(-5deg) scale(0.8);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, 100%) rotate(0deg) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slap-impact {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            20% {
+                transform: translate(-50%, -50%) scale(1.5) rotate(20deg);
+                opacity: 1;
+            }
+            40% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(-10deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slap-dizzy {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translate(-48%, -50%) rotate(-5deg);
+            }
+            20%, 40%, 60%, 80% {
+                transform: translate(-52%, -50%) rotate(5deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+        }
+
+        @keyframes kiss-smooch {
+            0% {
+                transform: translate(-50%, -100%) scale(0);
+                opacity: 0;
+            }
+            20% {
+                transform: translate(-50%, 50%) scale(1.2);
+                opacity: 1;
+            }
+            40% {
+                transform: translate(-50%, 40%) scale(1);
+                opacity: 1;
+            }
+            55% {
+                transform: translate(-50%, 40%) scale(1.3);
+                opacity: 0.8;
+            }
+            70% {
+                transform: translate(-50%, -100%) scale(0);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -100%) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes kiss-love {
+            0%, 65% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            75% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            80%, 90% {
+                transform: translate(-50%, -50%) scale(1.15);
+            }
+            85%, 95% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .monitor.surprised .eye {
+            transform: scale(1.3);
+            border-radius: 70%;
+        }
+
+        .monitor.sleepy .eye {
+            height: 10px;
+            transform: scaleY(0.2);
+        }
+
+        .monitor.look-up .display-container {
+            transform: translate(-50%, -80%);
+        }
+
+        .monitor.look-right .display-container {
+            transform: translate(-35%, -50%);
+        }
+
+        .monitor.look-left .display-container {
+            transform: translate(-65%, -50%);
+        }
+
+        .monitor.look-up-right .display-container {
+            transform: translate(-35%, -80%);
+        }
+
+        .monitor.look-up-left .display-container {
+            transform: translate(-65%, -80%);
+        }
+
+        .monitor.look-down .display-container {
+            transform: translate(-50%, -20%);
+        }
+
+        .monitor.look-down-right .display-container {
+            transform: translate(-35%, -20%);
+        }
+
+        .monitor.look-down-left .display-container {
+            transform: translate(-65%, -20%);
+        }
+
+        .display-container {
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .scanlines {
+            animation: flicker 0.15s infinite alternate;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="scene">
+        <div class="monitor" id="monitor">
+            <div class="screen">
+                <div class="display-container">
+                    <div class="typing" id="typing">
+                        <div class="typing-dot"></div>
+                    </div>
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="gif-container" id="gif-container">
+                        <img id="gif-display" src="" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        class BotCompanion {
+            constructor() {
+                this.ws = null;
+                this.monitor = document.getElementById('monitor');
+                this.typing = document.getElementById('typing');
+                this.displayContainer = document.querySelector('.display-container');
+                this.eyes = document.querySelector('.eyes');
+                this.gifContainer = document.getElementById('gif-container');
+                this.gifDisplay = document.getElementById('gif-display');
+                this.connecting = false;
+                this.currentState = 'idle';
+                this.pingInterval = null;
+                this.lastActivityTime = Date.now();
+                this.initializePongCheck();
+                this.initialize();
+            }
+
+            initialize() {
+                this.connect();
+                this.setupBlinking();
+            }
+
+            initializePongCheck() {
+                this.pongInterval = setInterval(() => {
+                    const currentTime = Date.now();
+                    const timeSinceActivity = currentTime - this.lastActivityTime;
+                    
+                    if (timeSinceActivity >= 600000 && this.currentState === 'idle') {
+                        if (Math.random() < 0.3) {
+                            this.handleReaction({ type: 'pong' });
+                        }
+                    }
+                }, 60000);
+            }
+
+            hexToRgba(hex, alpha) {
+                const bigint = parseInt(hex.replace('#', ''), 16);
+                const r = (bigint >> 16) & 255;
+                const g = (bigint >> 8) & 255;
+                const b = bigint & 255;
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+
+            setupPing() {
+                if (this.pingInterval) {
+                    clearInterval(this.pingInterval);
+                }
+                this.pingInterval = setInterval(() => {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'ping' }));
+                    }
+                }, 30000);
+            }
+
+            setupBlinking() {
+                const blinkConfig = {
+                    frequency: 0.3,
+                    doubleBlink: 0.1,
+                    checkInterval: 5500
+                };
+
+                const lookConfig = {
+                    frequency: 0.3,
+                    directions: ['look-up', 'look-left', 'look-right', 'look-up-left', 'look-up-right'],
+                    duration: 2000
+                };
+
+                const blink = () => {
+                    if (this.currentState === 'idle' || this.currentState === 'fight') {
+                        const eyes = document.querySelectorAll('.eye');
+                        const isDoubleBlink = Math.random() < blinkConfig.doubleBlink;
+                        
+                        eyes.forEach(eye => {
+                            eye.classList.add('blinking');
+                            
+                            eye.style.animation = `${isDoubleBlink ? 'doubleBlink' : 'blink'} ${isDoubleBlink ? '0.4s' : '0.2s'} ease-in-out`;
+                            
+                            setTimeout(() => {
+                                eye.style.animation = '';
+                                eye.classList.remove('blinking');
+                            }, isDoubleBlink ? 400 : 200);
+                        });
+                    }
+                };
+
+                const randomLook = () => {
+                    if (this.currentState === 'idle' && Math.random() < lookConfig.frequency) {
+                        const direction = lookConfig.directions[Math.floor(Math.random() * lookConfig.directions.length)];
+                        this.monitor.classList.add(direction);
+                        
+                        setTimeout(() => {
+                            if (this.currentState === 'idle') {
+                                this.monitor.classList.remove(direction);
+                                setTimeout(() => {
+                                    if (this.currentState === 'idle') {
+                                        blink();
+                                    }
+                                }, 200);
+                            }
+                        }, lookConfig.duration);
+                    }
+                };
+
+                setTimeout(blink, 1000);
+
+                setInterval(() => {
+                    if (Math.random() < blinkConfig.frequency) {
+                        blink();
+                    }
+                }, blinkConfig.checkInterval);
+
+                setInterval(randomLook, 8000);
+            }
+
+            async handleGif(data) {
+                const { url, duration } = data;
+
+                if (this.resetTimeout) {
+                    clearTimeout(this.resetTimeout);
+                    this.resetTimeout = null;
+                }
+
+                this.returnToIdle();
+                this.currentState = 'show-gif';
+                this.monitor.classList.add('show-gif');
+                this.gifDisplay.src = url;
+
+                const gifDuration = duration || 3000;
+                
+                this.resetTimeout = setTimeout(() => {
+                    if (this.currentState === 'show-gif') {
+                        this.returnToIdle();
+                    }
+                }, gifDuration);
+            }
+
+            async connect() {
+                if (this.connecting) {
+                    console.log('Already attempting to connect...');
+                    return;
+                }
+                this.connecting = true;
+                const wsToken = new URLSearchParams(window.location.search).get('token') || '';
+                const wsUrl = `ws://localhost:8555?token=${wsToken}`;
+                console.log("Attempting to connect to:", wsUrl);
+                try {
+                    this.ws = new WebSocket(wsUrl);
+                    this.ws.onopen = () => {
+                        console.log("WebSocket connected!");
+                        this.connecting = false;
+                        document.body.classList.remove('reconnecting');
+                        this.setupPing();
+                    };
+                    this.ws.onclose = () => {
+                        console.log("WebSocket disconnected - retrying in 5s");
+                        this.connecting = false;
+                        document.body.classList.add('reconnecting');
+                        if (this.pingInterval) {
+                            clearInterval(this.pingInterval);
+                            this.pingInterval = null;
+                        }
+                        setTimeout(() => this.connect(), 5000);
+                    };
+                    this.ws.onerror = (error) => {
+                        console.error("WebSocket error:", error);
+                        this.connecting = false;
+                    };
+                    this.ws.onmessage = (event) => {
+                        console.log("Message received:", event.data);
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleMessage(data);
+                        } catch (error) {
+                            console.error("Error parsing message:", error);
+                        }
+                    };
+                } catch (error) {
+                    console.error("Connection error:", error);
+                    this.connecting = false;
+                    setTimeout(() => this.connect(), 5000);
+                }
+            }
+
+            handleImageDisplay(data) {
+                if (this.resetTimeout) {
+                    clearTimeout(this.resetTimeout);
+                    this.resetTimeout = null;
+                }
+                
+                this.currentState = 'show-image';
+                this.monitor.classList.add('show-image');
+
+                const displayContainer = this.monitor.querySelector('.display-container');
+                displayContainer.style.setProperty('--image-url', `url(${data.url})`);
+
+                this.resetTimeout = setTimeout(() => {
+                    if (this.currentState === 'show-image') {
+                        this.returnToIdle();
+                    }
+                }, 2000);
+            }
+
+            handleMessage(data) {
+                console.log("Processing message:", data);
+                switch(data.type.trim()) {
+                    case 'typing':
+                        this.handleTyping(data.data);
+                        break;
+                    case 'status':
+                        this.handleStatusUpdate(data.data);
+                        break;
+                    case 'reaction':
+                        this.handleReaction(data.data);
+                        break;
+                    case 'avatar_color':
+                        this.handleAvatarColor(data.data);
+                        break;
+                    case 'chat-message':
+                        this.handleChatMessage(data.data);
+                        break;
+                    case 'pong':
+                        break;
+                    case 'gif':
+                        this.handleGif(data.data);
+                        break;
+                    case 'show-image':
+                        this.handleImageDisplay(data.data);
+                        break;
+                    default:
+                        console.log("Unknown message type:", data.type);
+                }
+            }
+
+            handleChatMessage(data) {
+                console.log("Chat message received from", data.username + ":", data.message);
+            }
+
+            handleTyping(data) {
+                console.log("Setting typing state:", data.state);
+                if (data.state) {
+                    this.currentState = 'typing';
+                    this.typing.classList.add('active');
+                } else {
+                    this.typing.classList.remove('active');
+                    this.returnToIdle();
+                }
+            }
+
+            handleAvatarColor({ color, duration = 3000 }) {
+                this.lastActivityTime = Date.now();
+                this.currentState = 'fight';
+                const root = document.documentElement;
+                root.style.setProperty('--eye', color);
+                root.style.setProperty('--eye-glow', this.hexToRgba(color, 0.4));
+                root.style.setProperty('--border', '#241a1a');
+                root.style.setProperty('--border-light', '#402a2a');
+                root.style.setProperty('--screen', '#140a0a');
+                this.monitor.classList.add('fight');
+                if (this.resetTimeout) clearTimeout(this.resetTimeout);
+                this.resetTimeout = setTimeout(() => {
+                    if (this.currentState === 'fight') {
+                        this.monitor.classList.remove('fight');
+                        root.style.setProperty('--eye', '#0bbfad');
+                        root.style.setProperty('--eye-glow', 'rgba(39, 207, 173, 0.4)');
+                        root.style.setProperty('--border', '#242629');
+                        root.style.setProperty('--border-light', '#383a3d');
+                        root.style.setProperty('--screen', '#0f1318');
+                        this.returnToIdle();
+                    }
+                }, duration);
+            }
+
+            handleStatusUpdate(data) {
+                console.log("Status update received:", data);
+            }
+
+            handleReaction(data) {
+                this.lastActivityTime = Date.now();
+                console.log("Starting reaction handler:", data);
+                const { type, intensity = 1 } = data;
+
+                if (type === 'pong' && this.currentState === 'fight') {
+                    console.log("Ignoring pong request while in fight mode");
+                    return;
+                }
+
+                if (this.resetTimeout) {
+                    clearTimeout(this.resetTimeout);
+                    this.resetTimeout = null;
+                }
+
+                console.log("Current state before reaction:", this.currentState);
+                console.log("Setting new state:", type);
+                
+                this.currentState = type;
+                this.monitor.classList.remove('happy', 'surprised', 'sleepy', 'look-up', 'look-right',
+                    'look-left', 'look-up-right', 'look-up-left', 'look-down', 'look-down-right', 'look-down-left',
+                    'heart', 'timesup', 'wingame', 'newgame', 'confession', 'laugh', 'hydrate',
+                    'success', 'loading', 'thinking', 'rizz', 'brb', 'wave', 'eww', 'okay', 'nice', 'pong',
+                    'spud', 'show-gif', 'cool', 'paint', 'music', 'pet', 'feed', 'slap', 'kiss');
+
+                if (type === 'pong') {
+                    const pongField = document.createElement('div');
+                    pongField.className = 'pong-field';
+                    pongField.innerHTML = `
+                        <div class="pong-net"></div>
+                        <div class="ping"></div>
+                        <div class="pong-paddle"></div>
+                        <div class="ball"></div>
+                    `;
+                    this.displayContainer.appendChild(pongField);
+                }
+
+                if (type) {
+                    console.log("Adding class:", type);
+                    this.monitor.classList.add(type);
+                }
+
+                this.resetTimeout = setTimeout(() => {
+                    console.log(`Animation timeout complete for ${type}, returning to idle`);
+                    if (this.currentState === type) {
+                        if (type === 'pong') {
+                            const pongField = this.displayContainer.querySelector('.pong-field');
+                            if (pongField) {
+                                pongField.remove();
+                            }
+                        }
+                        this.returnToIdle();
+                    }
+                }, this.getAnimationDuration(type));
+            }
+
+            getAnimationDuration(type) {
+                const durations = {
+                    'happy': 2000,
+                    'surprised': 2000,
+                    'sleepy': 2000,
+                    'heart': 3000,
+                    'timesup': 3000,
+                    'wingame': 2500,
+                    'look-up': 2000,
+                    'look-right': 2000,
+                    'look-left': 2000,
+                    'look-down': 2000,
+                    'look-down-right': 2000,
+                    'look-down-left': 2000,
+                    'look-up-left': 2000,
+                    'look-up-right': 2000,
+                    'confession': 2000,
+                    'laugh': 3000,
+                    'hydrate': 2000,
+                    'success': 2000,
+                    'loading': 3000,
+                    'thinking': 2000,
+                    'rizz': 2000,
+                    'brb': 4000,
+                    'wave': 3000,
+                    'eww': 2000,
+                    'okay': 2000,
+                    'nice': 2000,
+                    'pong': 12000,
+                    'spud': 2000,
+                    'cool': 2000,
+                    'paint': 6000,
+                    'music': 6000,
+                    'pet': 2500,
+                    'feed': 2000,
+                    'slap': 1500,
+                    'kiss': 3000
+                };
+                return durations[type] || 2000;
+            }
+
+            returnToIdle() {
+                this.lastActivityTime = Date.now();
+                console.log("Returning to idle state");
+                if (this.resetTimeout) {
+                    clearTimeout(this.resetTimeout);
+                    this.resetTimeout = null;
+                }
+                this.currentState = 'idle';
+                this.monitor.classList.remove('happy', 'surprised', 'sleepy', 'look-up', 'look-right',
+                    'look-left', 'look-up-right', 'look-up-left', 'look-down', 'look-down-right', 'look-down-left',
+                    'heart', 'timesup', 'wingame', 'newgame', 'confession', 'laugh', 'hydrate',
+                    'success', 'loading', 'thinking', 'rizz', 'brb', 'wave', 'eww', 'okay', 'nice', 'pong',
+                    'spud', 'show-gif', 'cool', 'paint', 'music', 'pet', 'feed', 'slap', 'kiss');
+                const displayContainer = this.monitor.querySelector('.display-container::before');
+                if (displayContainer) {
+                    displayContainer.style.backgroundImage = '';
+                }
+                this.typing.classList.remove('active');
+                this.gifDisplay.src = '';
+
+                        setTimeout(() => {
+                const eyes = document.querySelectorAll('.eye');
+                eyes.forEach(eye => {
+                    eye.style.animation = 'blink 0.2s ease-in-out';
+                    setTimeout(() => {
+                        eye.style.animation = '';
+                    }, 200);
+                });
+            }, 200);
+            
+            console.log("Reset complete, now in idle state");
+        }
+        }
+        window.addEventListener('load', () => {
+            window.botCompanion = new BotCompanion();
+        });
+  </script>
+</body>
+</html>

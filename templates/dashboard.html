@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WatsonMcBot Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f0f;
+        }
+
+        .glass {
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-online {
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        .status-offline {
+            animation: pulse-red 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(32, 178, 170, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(32, 178, 170, 0); }
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(138, 43, 226, 0); }
+        }
+
+        .log-entry {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8a2be2 0%, #6a5acd 100%);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(138, 43, 226, 0.5);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(138, 43, 226, 0.6);
+            background: linear-gradient(135deg, #9d4edd 0%, #7b68ee 100%);
+        }
+
+        .btn-teal {
+            background: linear-gradient(135deg, #20b2aa 0%, #17a2b8 100%);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(32, 178, 170, 0.5);
+        }
+
+        .btn-teal:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(32, 178, 170, 0.6);
+            background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%);
+        }
+
+        .console {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .chat-message {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(138, 43, 226, 0.5);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            animation: slideInRight 0.3s ease-out;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .toast.success {
+            border-color: #20b2aa;
+        }
+
+        .toast.error {
+            border-color: #ef4444;
+        }
+
+        .toast.warning {
+            border-color: #fbbf24;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="glass rounded-2xl p-6 mb-6 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg" style="background: linear-gradient(135deg, #8a2be2 0%, #20b2aa 100%);">
+                        WM
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold" style="background: linear-gradient(135deg, #8a2be2 0%, #20b2aa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">WatsonMcBot Dashboard</h1>
+                        <p class="text-gray-400 text-sm">Real-time monitoring and control</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="ws-status" class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-gray-500 rounded-full"></div>
+                        <span class="text-white text-sm">Connecting...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="glass rounded-xl p-4 shadow-xl stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-300 text-sm font-medium">Twitch Bot</span>
+                    <div id="twitch-status" class="w-3 h-3 bg-gray-500 rounded-full"></div>
+                </div>
+                <div class="text-white text-2xl font-bold">Offline</div>
+            </div>
+
+            <div class="glass rounded-xl p-4 shadow-xl stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-300 text-sm font-medium">Discord Bot</span>
+                    <div id="discord-status" class="w-3 h-3 bg-gray-500 rounded-full"></div>
+                </div>
+                <div class="text-white text-2xl font-bold">Offline</div>
+            </div>
+
+            <div class="glass rounded-xl p-4 shadow-xl stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-300 text-sm font-medium">EventSub</span>
+                    <div id="eventsub-status" class="w-3 h-3 bg-gray-500 rounded-full"></div>
+                </div>
+                <div class="text-white text-2xl font-bold">Offline</div>
+            </div>
+
+            <div class="glass rounded-xl p-4 shadow-xl stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-300 text-sm font-medium">Database</span>
+                    <div id="database-status" class="w-3 h-3 bg-gray-500 rounded-full"></div>
+                </div>
+                <div class="text-white text-2xl font-bold">Offline</div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Stream Info -->
+            <div class="glass rounded-xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-4">Stream Info</h2>
+                <div id="stream-info" class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300 text-sm">Status</span>
+                        <span id="stream-status" class="text-white font-medium">Offline</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300 text-sm">Viewers</span>
+                        <span id="stream-viewers" class="text-white font-medium">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300 text-sm">Uptime</span>
+                        <span id="stream-uptime" class="text-white font-medium">N/A</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300 text-sm">Game</span>
+                        <span id="stream-game" class="text-white font-medium text-right">N/A</span>
+                    </div>
+                    <div class="border-t border-gray-500 pt-3 mt-3">
+                        <span class="text-gray-300 text-sm">Title</span>
+                        <p id="stream-title" class="text-white font-medium mt-1">N/A</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Now Playing -->
+            <div class="glass rounded-xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-4">Now Playing</h2>
+                <div id="now-playing" class="space-y-3">
+                    <div class="text-center py-8">
+                        <svg class="w-16 h-16 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                        </svg>
+                        <p class="text-gray-300">No song playing</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Systems -->
+            <div class="glass rounded-xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-4">Active Systems</h2>
+                <div id="active-systems" class="space-y-2">
+                    <div class="flex items-center justify-between py-2 px-3 bg-white bg-opacity-10 rounded-lg">
+                        <span class="text-gray-200 text-sm">Trivia Games</span>
+                        <span id="trivia-count" class="text-white font-bold">0</span>
+                    </div>
+                    <div class="flex items-center justify-between py-2 px-3 bg-white bg-opacity-10 rounded-lg">
+                        <span class="text-gray-200 text-sm">Edge Streaks</span>
+                        <span id="edge-count" class="text-white font-bold">0</span>
+                    </div>
+                    <div class="flex items-center justify-between py-2 px-3 bg-white bg-opacity-10 rounded-lg">
+                        <span class="text-gray-200 text-sm">Active Duels</span>
+                        <span id="duel-count" class="text-white font-bold">0</span>
+                    </div>
+                    <div class="flex items-center justify-between py-2 px-3 bg-white bg-opacity-10 rounded-lg">
+                        <span class="text-gray-200 text-sm">Fight Games</span>
+                        <span id="fight-count" class="text-white font-bold">0</span>
+                    </div>
+                    <div class="flex items-center justify-between py-2 px-3 bg-white bg-opacity-10 rounded-lg">
+                        <span class="text-gray-200 text-sm">Ambient Mode</span>
+                        <span id="ambient-mode" class="text-white font-bold">Off</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console and Chat -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Console Logs -->
+            <div class="glass rounded-xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-white">Console Logs</h2>
+                    <button onclick="clearConsole()" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors">
+                        Clear
+                    </button>
+                </div>
+                <div id="console-logs" class="console bg-black bg-opacity-70 rounded-lg p-4 h-80 overflow-y-auto scrollbar-hide">
+                    <div class="text-gray-400">Waiting for logs...</div>
+                </div>
+            </div>
+
+            <!-- Recent Chat -->
+            <div class="glass rounded-xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-white">Recent Chat</h2>
+                    <button onclick="clearChat()" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors">
+                        Clear
+                    </button>
+                </div>
+                <div id="recent-chat" class="bg-black bg-opacity-70 rounded-lg p-4 h-80 overflow-y-auto scrollbar-hide">
+                    <div class="text-gray-400">Waiting for messages...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="glass rounded-xl p-6 shadow-xl">
+            <h2 class="text-xl font-bold text-white mb-4">Control Panel</h2>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-4 border-b border-gray-400">
+                <button onclick="switchTab('alerts')" id="tab-alerts" class="tab-btn px-4 py-2 text-white font-medium border-b-2 border-purple-500">
+                    Test Alerts
+                </button>
+                <button onclick="switchTab('redeems')" id="tab-redeems" class="tab-btn px-4 py-2 text-gray-300 font-medium hover:text-white">
+                    Test Redeems
+                </button>
+                <button onclick="switchTab('commands')" id="tab-commands" class="tab-btn px-4 py-2 text-gray-300 font-medium hover:text-white">
+                    Commands
+                </button>
+                <button onclick="switchTab('spotify')" id="tab-spotify" class="tab-btn px-4 py-2 text-gray-300 font-medium hover:text-white">
+                    Spotify
+                </button>
+                <button onclick="switchTab('stream')" id="tab-stream" class="tab-btn px-4 py-2 text-gray-300 font-medium hover:text-white">
+                    Stream Controls
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content-alerts" class="tab-content">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button onclick="testAlert('follow')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Test Follow
+                    </button>
+                    <button onclick="testAlert('sub')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Test Sub
+                    </button>
+                    <button onclick="testAlert('raid')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Test Raid
+                    </button>
+                    <button onclick="testAlert('bits')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Test Bits
+                    </button>
+                    <button onclick="testAlert('gift')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Test Gift Sub
+                    </button>
+                    <button onclick="testAlert('image')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Test Image
+                    </button>
+                    <button onclick="testAlert('video')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Test Video
+                    </button>
+                    <button onclick="testAlert('song')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Test Song
+                    </button>
+                </div>
+            </div>
+
+            <div id="tab-content-redeems" class="tab-content hidden">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button onclick="testRedeem('stinky')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Stinky
+                    </button>
+                    <button onclick="testRedeem('nickname')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Nickname
+                    </button>
+                    <button onclick="testRedeem('trivia')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Trivia
+                    </button>
+                    <button onclick="testRedeem('lmao')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        LMAO
+                    </button>
+                    <button onclick="testRedeem('jamie')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Jamie
+                    </button>
+                    <button onclick="testRedeem('ruin')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Ruin Day
+                    </button>
+                    <button onclick="testRedeem('duel')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Duel
+                    </button>
+                    <button onclick="testRedeem('fight')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Fight
+                    </button>
+                </div>
+            </div>
+
+            <div id="tab-content-commands" class="tab-content hidden">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <button onclick="executeCommand('edgestats')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Edge Stats
+                    </button>
+                    <button onclick="executeCommand('leaderboard')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Leaderboard
+                    </button>
+                    <button onclick="executeCommand('triviastats')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Trivia Stats
+                    </button>
+                    <button onclick="executeCommand('song')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        Current Song
+                    </button>
+                    <button onclick="showClearStats()" class="bg-red-500 hover:bg-red-600 px-4 py-3 text-white rounded-lg font-medium">
+                        Clear Stats
+                    </button>
+                    <button onclick="reloadBot()" class="bg-orange-500 hover:bg-orange-600 px-4 py-3 text-white rounded-lg font-medium">
+                        Reload Bot
+                    </button>
+                </div>
+            </div>
+
+            <div id="tab-content-spotify" class="tab-content hidden">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button onclick="spotifyControl('play')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        ▶ Play
+                    </button>
+                    <button onclick="spotifyControl('pause')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        ⏸ Pause
+                    </button>
+                    <button onclick="spotifyControl('next')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        ⏭ Next
+                    </button>
+                    <button onclick="spotifyControl('previous')" class="btn-primary px-4 py-3 text-white rounded-lg font-medium">
+                        ⏮ Previous
+                    </button>
+                </div>
+            </div>
+
+            <div id="tab-content-stream" class="tab-content hidden">
+                <div class="space-y-4">
+                    <!-- Stream Title & Game -->
+                    <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                        <h3 class="text-white font-bold mb-3">Update Stream Info</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-gray-200 text-sm block mb-1">Stream Title</label>
+                                <input type="text" id="stream-title-input" class="w-full px-3 py-2 bg-black bg-opacity-50 text-white rounded-lg border border-gray-700 focus:outline-none" style="border-color: rgba(138, 43, 226, 0.3);" onfocus="this.style.borderColor='#8a2be2'" onblur="this.style.borderColor='rgba(138, 43, 226, 0.3)'" placeholder="Enter new stream title">
+                            </div>
+                            <div>
+                                <label class="text-gray-200 text-sm block mb-1">Game/Category</label>
+                                <input type="text" id="stream-game-input" class="w-full px-3 py-2 bg-black bg-opacity-50 text-white rounded-lg border border-gray-700 focus:outline-none" style="border-color: rgba(138, 43, 226, 0.3);" onfocus="this.style.borderColor='#20b2aa'" onblur="this.style.borderColor='rgba(138, 43, 226, 0.3)'" placeholder="Enter game name">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="updateStreamTitle()" class="btn-primary px-4 py-2 text-white rounded-lg font-medium">
+                                    Update Title
+                                </button>
+                                <button onclick="updateStreamGame()" class="btn-primary px-4 py-2 text-white rounded-lg font-medium">
+                                    Update Game
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Controls -->
+                    <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                        <h3 class="text-white font-bold mb-3">Chat Controls</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <button onclick="chatAction('emote-only')" class="bg-purple-500 hover:bg-purple-600 px-3 py-2 text-white text-sm rounded-lg font-medium">
+                                Emote Only
+                            </button>
+                            <button onclick="chatAction('followers-only')" class="bg-purple-500 hover:bg-purple-600 px-3 py-2 text-white text-sm rounded-lg font-medium">
+                                Followers Only
+                            </button>
+                            <button onclick="chatAction('slow-mode')" class="bg-purple-500 hover:bg-purple-600 px-3 py-2 text-white text-sm rounded-lg font-medium">
+                                Slow Mode
+                            </button>
+                            <button onclick="chatAction('clear-chat')" class="bg-red-500 hover:bg-red-600 px-3 py-2 text-white text-sm rounded-lg font-medium">
+                                Clear Chat
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Moderator Actions -->
+                    <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                        <h3 class="text-white font-bold mb-3">Moderator Actions</h3>
+                        <div class="space-y-2">
+                            <div class="flex gap-2">
+                                <input type="text" id="mod-username" class="flex-1 px-3 py-2 bg-black bg-opacity-50 text-white rounded-lg border focus:outline-none" style="border-color: rgba(138, 43, 226, 0.3);" onfocus="this.style.borderColor='#8a2be2'" onblur="this.style.borderColor='rgba(138, 43, 226, 0.3)'" placeholder="Username">
+                                <button onclick="timeoutUser()" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 text-white rounded-lg font-medium whitespace-nowrap">
+                                    Timeout (60s)
+                                </button>
+                                <button onclick="banUser()" class="bg-red-500 hover:bg-red-600 px-4 py-2 text-white rounded-lg font-medium">
+                                    Ban
+                                </button>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="showVIPs()" class="bg-green-500 hover:bg-green-600 px-4 py-2 text-white text-sm rounded-lg font-medium flex-1">
+                                    View VIPs
+                                </button>
+                                <button onclick="showMods()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 text-white text-sm rounded-lg font-medium flex-1">
+                                    View Mods
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Commercial & Markers -->
+                    <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                        <h3 class="text-white font-bold mb-3">Stream Actions</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <button onclick="runCommercial(30)" class="bg-green-500 hover:bg-green-600 px-3 py-2 text-white text-sm rounded-lg font-medium">
+                                Ad (30s)
+                            </button>
+                            <button onclick="runCommercial(60)" class="bg-green-500 hover:bg-green-600 px-3 py-2 text-white text-sm rounded-lg font-medium">
+                                Ad (60s)
+                            </button>
+                            <button onclick="runCommercial(90)" class="bg-green-500 hover:bg-green-600 px-3 py-2 text-white text-sm rounded-lg font-medium">
+                                Ad (90s)
+                            </button>
+                            <button onclick="createMarker()" class="bg-blue-500 hover:bg-blue-600 px-3 py-2 text-white text-sm rounded-lg font-medium">
+                                Create Marker
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Predictions & Polls -->
+                    <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                        <h3 class="text-white font-bold mb-3">Community Features</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="showCreatePrediction()" class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 text-white rounded-lg font-medium">
+                                Create Prediction
+                            </button>
+                            <button onclick="showCreatePoll()" class="bg-pink-500 hover:bg-pink-600 px-4 py-2 text-white rounded-lg font-medium">
+                                Create Poll
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const consoleMaxLines = 100;
+        const chatMaxMessages = 50;
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="flex-1">
+                        <div class="font-semibold text-sm">${type.toUpperCase()}</div>
+                        <div class="text-gray-300 text-sm mt-1">${message}</div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Initialize WebSocket
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.hostname;
+            ws = new WebSocket(`${protocol}//${host}:8555?token=${API_KEY}`);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                reconnectAttempts = 0;
+                updateWSStatus(true);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                } catch (e) {
+                    console.error('Error parsing message:', e);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                updateWSStatus(false);
+                attemptReconnect();
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function attemptReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`Reconnecting... Attempt ${reconnectAttempts}`);
+                setTimeout(initWebSocket, 2000);
+            }
+        }
+
+        function updateWSStatus(connected) {
+            const statusEl = document.getElementById('ws-status');
+            if (connected) {
+                statusEl.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full status-online"></div><span class="text-white text-sm">Connected</span>';
+            } else {
+                statusEl.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full status-offline"></div><span class="text-white text-sm">Disconnected</span>';
+            }
+        }
+
+        function handleMessage(data) {
+            switch(data.type) {
+                case 'status':
+                    updateStatus(data);
+                    break;
+                case 'log':
+                    addLog(data);
+                    break;
+                case 'chat':
+                    addChatMessage(data);
+                    break;
+                case 'stream_info':
+                    updateStreamInfo(data);
+                    break;
+                case 'now_playing':
+                    updateNowPlaying(data);
+                    break;
+                case 'active_systems':
+                    updateActiveSystems(data);
+                    break;
+            }
+        }
+
+        function updateStatus(data) {
+            const statuses = data.statuses || {};
+
+            updateStatusIndicator('twitch-status', statuses.twitch);
+            updateStatusIndicator('discord-status', statuses.discord);
+            updateStatusIndicator('eventsub-status', statuses.eventsub);
+            updateStatusIndicator('database-status', statuses.database);
+        }
+
+        function updateStatusIndicator(id, status) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            el.className = 'w-3 h-3 rounded-full';
+            if (status === true || status === 'online') {
+                el.style.backgroundColor = '#20b2aa';
+                el.classList.add('status-online');
+            } else if (status === false || status === 'offline') {
+                el.style.backgroundColor = '#8a2be2';
+                el.classList.add('status-offline');
+            } else {
+                el.style.backgroundColor = '#fbbf24';
+            }
+        }
+
+        function addLog(data) {
+            const consoleEl = document.getElementById('console-logs');
+            if (consoleEl.children.length === 1 && consoleEl.children[0].textContent === 'Waiting for logs...') {
+                consoleEl.innerHTML = '';
+            }
+
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry mb-1';
+
+            const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString();
+            const level = data.level || 'INFO';
+            let color = 'text-gray-300';
+            if (level === 'ERROR') color = 'text-red-400';
+            else if (level === 'WARNING') color = 'text-yellow-400';
+            else if (level === 'INFO') color = 'text-teal-400';
+
+            logEntry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> <span class="${color}">${level}</span> <span class="text-white">${data.message || data.content || ''}</span>`;
+
+            consoleEl.appendChild(logEntry);
+
+            while (consoleEl.children.length > consoleMaxLines) {
+                consoleEl.removeChild(consoleEl.firstChild);
+            }
+
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function addChatMessage(data) {
+            const chatEl = document.getElementById('recent-chat');
+            if (chatEl.children.length === 1 && chatEl.children[0].textContent === 'Waiting for messages...') {
+                chatEl.innerHTML = '';
+            }
+
+            const msgEl = document.createElement('div');
+            msgEl.className = 'chat-message mb-2 p-2 bg-white bg-opacity-10 rounded';
+
+            const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString();
+            const username = data.username || 'Unknown';
+            const message = data.message || '';
+            const color = data.color || '#FFFFFF';
+
+            msgEl.innerHTML = `<span class="text-gray-500 text-xs">[${timestamp}]</span> <span style="color: ${color}; font-weight: 600;">${username}</span>: <span class="text-white">${message}</span>`;
+
+            chatEl.appendChild(msgEl);
+
+            while (chatEl.children.length > chatMaxMessages) {
+                chatEl.removeChild(chatEl.firstChild);
+            }
+
+            chatEl.scrollTop = chatEl.scrollHeight;
+        }
+
+        function updateStreamInfo(data) {
+            document.getElementById('stream-status').textContent = data.is_live ? 'LIVE' : 'Offline';
+            document.getElementById('stream-viewers').textContent = data.viewers || '0';
+            document.getElementById('stream-uptime').textContent = data.uptime || 'N/A';
+            document.getElementById('stream-game').textContent = data.game || 'N/A';
+            document.getElementById('stream-title').textContent = data.title || 'N/A';
+        }
+
+        function updateNowPlaying(data) {
+            const el = document.getElementById('now-playing');
+            if (data.song && data.artist) {
+                el.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="text-white font-bold text-lg">${data.song}</div>
+                        <div class="text-gray-300">${data.artist}</div>
+                        ${data.album ? `<div class="text-gray-400 text-sm">${data.album}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                el.innerHTML = `
+                    <div class="text-center py-8">
+                        <svg class="w-16 h-16 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                        </svg>
+                        <p class="text-gray-300">No song playing</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateActiveSystems(data) {
+            document.getElementById('trivia-count').textContent = data.trivia || '0';
+            document.getElementById('edge-count').textContent = data.edge || '0';
+            document.getElementById('duel-count').textContent = data.duels || '0';
+            document.getElementById('fight-count').textContent = data.fights || '0';
+            document.getElementById('ambient-mode').textContent = data.ambient_mode ? 'On' : 'Off';
+        }
+
+        function clearConsole() {
+            document.getElementById('console-logs').innerHTML = '<div class="text-gray-400">Console cleared</div>';
+        }
+
+        function clearChat() {
+            document.getElementById('recent-chat').innerHTML = '<div class="text-gray-400">Chat cleared</div>';
+        }
+
+        function switchTab(tab) {
+            const tabs = ['alerts', 'redeems', 'commands', 'spotify', 'stream'];
+            tabs.forEach(t => {
+                document.getElementById(`tab-${t}`).className = 'tab-btn px-4 py-2 text-gray-300 font-medium hover:text-white';
+                document.getElementById(`tab-content-${t}`).classList.add('hidden');
+            });
+
+            document.getElementById(`tab-${tab}`).className = 'tab-btn px-4 py-2 text-white font-medium border-b-2 border-purple-500';
+            document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
+        }
+
+        // API key for authenticated requests — injected by Flask
+        const API_KEY = '{{ api_key }}';
+
+        async function apiFetch(url, options = {}) {
+            options.headers = options.headers || {};
+            options.headers['X-API-Key'] = API_KEY;
+            return fetch(url, options);
+        }
+
+        async function testAlert(type) {
+            try {
+                const response = await apiFetch(`/api/test/${type}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || `${type} alert triggered!`, 'success');
+                }
+            } catch (e) {
+                showToast('Error triggering alert: ' + e.message, 'error');
+            }
+        }
+
+        async function testRedeem(type) {
+            try {
+                const response = await apiFetch(`/api/redeem/${type}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || `${type} redeem triggered!`, 'success');
+                }
+            } catch (e) {
+                showToast('Error triggering redeem: ' + e.message, 'error');
+            }
+        }
+
+        async function executeCommand(cmd) {
+            try {
+                const response = await apiFetch(`/api/command/${cmd}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || `${cmd} command executed!`, 'success');
+                }
+            } catch (e) {
+                showToast('Error executing command: ' + e.message, 'error');
+            }
+        }
+
+        async function spotifyControl(action) {
+            try {
+                const response = await apiFetch(`/api/spotify/${action}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || `Spotify ${action} executed!`, 'success');
+                }
+            } catch (e) {
+                showToast('Error controlling Spotify: ' + e.message, 'error');
+            }
+        }
+
+        function showClearStats() {
+            showToast('Clear stats feature not yet implemented', 'warning');
+            // TODO: Implement stats clearing with proper confirmation modal
+        }
+
+        function reloadBot() {
+            showToast('Bot reload must be done manually - restart the bot process', 'warning');
+        }
+
+        // Fetch initial status
+        async function fetchStatus() {
+            try {
+                const response = await apiFetch('/api/status');
+                const data = await response.json();
+                updateStatus({ statuses: data.statuses });
+                updateStreamInfo(data.stream_info || {});
+                updateNowPlaying(data.now_playing || {});
+                updateActiveSystems(data.active_systems || {});
+            } catch (e) {
+                console.error('Error fetching status:', e);
+            }
+        }
+
+        // Stream Controls Functions
+        async function updateStreamTitle() {
+            const title = document.getElementById('stream-title-input').value;
+            if (!title) {
+                showToast('Please enter a stream title', 'warning');
+                return;
+            }
+            try {
+                const response = await apiFetch('/api/stream/title', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title: title})
+                });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || 'Stream title updated!', 'success');
+                    document.getElementById('stream-title-input').value = '';
+                    fetchStatus();
+                }
+            } catch (e) {
+                showToast('Error updating title: ' + e.message, 'error');
+            }
+        }
+
+        async function updateStreamGame() {
+            const game = document.getElementById('stream-game-input').value;
+            if (!game) {
+                showToast('Please enter a game name', 'warning');
+                return;
+            }
+            try {
+                const response = await apiFetch('/api/stream/game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({game: game})
+                });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || 'Stream game updated!', 'success');
+                    document.getElementById('stream-game-input').value = '';
+                    fetchStatus();
+                }
+            } catch (e) {
+                showToast('Error updating game: ' + e.message, 'error');
+            }
+        }
+
+        async function chatAction(action) {
+            try {
+                const response = await apiFetch(`/api/chat/${action}`, {method: 'POST'});
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || `${action} executed!`, 'success');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function timeoutUser() {
+            const username = document.getElementById('mod-username').value;
+            if (!username) {
+                showToast('Please enter a username', 'warning');
+                return;
+            }
+
+            // Use default 60 second timeout
+            const duration = 60;
+
+            try {
+                const response = await apiFetch('/api/mod/timeout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: username, duration: duration})
+                });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || `${username} timed out for ${duration}s`, 'success');
+                    document.getElementById('mod-username').value = '';
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function banUser() {
+            const username = document.getElementById('mod-username').value;
+            if (!username) {
+                showToast('Please enter a username', 'warning');
+                return;
+            }
+
+            try {
+                const response = await apiFetch('/api/mod/ban', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: username, reason: 'Banned via dashboard'})
+                });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || `${username} has been banned`, 'success');
+                    document.getElementById('mod-username').value = '';
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function showVIPs() {
+            try {
+                const response = await apiFetch('/api/stream/vips');
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else if (result.vips && result.vips.length > 0) {
+                    showToast('VIPs: ' + result.vips.join(', '), 'success');
+                } else {
+                    showToast('No VIPs found', 'warning');
+                }
+            } catch (e) {
+                showToast('Error fetching VIPs: ' + e.message, 'error');
+            }
+        }
+
+        async function showMods() {
+            try {
+                const response = await apiFetch('/api/stream/mods');
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else if (result.mods && result.mods.length > 0) {
+                    showToast('Moderators: ' + result.mods.join(', '), 'success');
+                } else {
+                    showToast('No moderators found', 'warning');
+                }
+            } catch (e) {
+                showToast('Error fetching mods: ' + e.message, 'error');
+            }
+        }
+
+        async function runCommercial(duration) {
+            try {
+                const response = await apiFetch('/api/stream/commercial', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({duration: duration})
+                });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || `Running ${duration}s commercial`, 'success');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function createMarker() {
+            try {
+                const response = await apiFetch('/api/stream/marker', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({description: 'Stream marker'})
+                });
+                const result = await response.json();
+                if (result.error) {
+                    showToast(result.error, 'error');
+                } else {
+                    showToast(result.message || 'Marker created!', 'success');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        function showCreatePrediction() {
+            showToast('Prediction creation not yet fully implemented', 'warning');
+            // TODO: Create a proper modal for prediction creation
+        }
+
+        function showCreatePoll() {
+            showToast('Poll creation not yet fully implemented', 'warning');
+            // TODO: Create a proper modal for poll creation
+        }
+
+        // Initialize
+        initWebSocket();
+        fetchStatus();
+        setInterval(fetchStatus, 5000);
+    </script>
+</body>
+</html>
