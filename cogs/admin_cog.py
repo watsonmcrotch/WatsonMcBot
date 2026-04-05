@@ -325,7 +325,7 @@ class AdminCog(commands.Cog):
             old_emotes = set(self.bot.emote_tracker.seventv_emotes.keys())
             current_usage = dict(self.bot.emote_tracker.emote_usage)
 
-            await self.bot.emote_tracker.load_7tv_emotes(seventv_user_id)
+            await self.bot.emote_tracker.load_7tv_emotes(seventv_user_id, http_session=self.bot.http_session)
 
             new_emotes = set(self.bot.emote_tracker.seventv_emotes.keys())
             added = new_emotes - old_emotes

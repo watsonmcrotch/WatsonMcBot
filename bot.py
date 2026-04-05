@@ -18,8 +18,6 @@ import traceback
 
 from collections import defaultdict
 from datetime import datetime, timedelta
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from pathlib import Path
 from pydub import AudioSegment
 from spotipy.cache_handler import CacheFileHandler
@@ -117,7 +115,7 @@ required_env_vars = [
     'DISCORD_CHANNEL_VIDEOS', 'DISCORD_CHANNEL_MUSIC',
     'STREAMER_NAME', 'RESPONSE_COOLDOWN', 'REMINDER_COOLDOWN', 'SEVENTV_USER_ID',
     'EMOTE_DATA_PATH', 'SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'SPOTIFY_REDIRECT_URI',
-    'GOOGLE_API_KEY', 'GOOGLE_CSE_ID', 'PAINT_PICTURE', 'GEMINI_API_KEY'
+    'PAINT_PICTURE', 'GEMINI_API_KEY'
 ]
 
 logging.info("Broadcaster Token: %s", "set" if os.getenv('TWITCH_READ_TOKEN') else "NOT SET")
@@ -219,7 +217,7 @@ class DiscordMonitor(discord.Client):
             
         if isinstance(message.channel, discord.DMChannel):
             logging.info(f"Received DM from {message.author}: {message.content}")
-            
+
             if hasattr(self.watson_bot, 'video_redeem'):
                 video_redeem = self.watson_bot.video_redeem
 
@@ -227,16 +225,23 @@ class DiscordMonitor(discord.Client):
                     author_name=message.author.name,
                     message_content=message.content,
                     attachments=message.attachments)
-                
+
                 if response:
                     await message.channel.send(response)
                     return
+
+            dm_username = message.author.name.lower()
+            if not self.watson_bot.check_user_rate_limit(dm_username):
+                logging.info(f"Rate limited DM response for {dm_username}")
+                return
+
             try:
                 response = await self.watson_bot.generate_response(
                     username=message.author.name,
                     message=message.content,
                     source='Private Discord DMs')
                 await message.channel.send(response)
+                self.watson_bot.record_user_response(dm_username)
                 logging.info(f"Sent response to {message.author}: {response}")
             except Exception as e:
                 logging.error(f"Error processing DM from {message.author}: {e}")
@@ -277,15 +282,16 @@ class EmoteTracker:
         self._emotes_loaded = False
         self._initialized = False
 
-    async def load_7tv_emotes(self, user_id: str):
+    async def load_7tv_emotes(self, user_id: str, http_session=None):
         if self._loading:
             return
         try:
             self._loading = True
             logging.info("Starting 7TV emote reload...")
             logging.info(f"Previous emote count: {len(self.seventv_emotes)}")
-            
-            async with self.http_session.get(f"https://7tv.io/v3/users/{user_id}") as response:
+
+            session = http_session or self.http_session
+            async with session.get(f"https://7tv.io/v3/users/{user_id}") as response:
                 if response.status == 200:
                     data = await response.json()
 
@@ -417,40 +423,6 @@ class EmoteTracker:
             logging.error(f"Error getting top emotes: {e}")
             return []
 
-# ------------------------ GoogleSearch ------------------------ #
-
-class GoogleSearch:
-    def __init__(self, api_key, cse_id):
-        self.service = build("customsearch", "v1", developerKey=api_key)
-        self.cse_id = cse_id
-
-    async def search(self, query, num_results=3):
-        try:
-            result = await asyncio.to_thread(
-                self.service.cse().list(
-                    q=query,
-                    cx=self.cse_id,
-                    num=num_results
-                ).execute
-            )
-
-            if 'items' not in result:
-                return []
-
-            search_results = []
-            for item in result['items']:
-                search_results.append({
-                    'title': item['title'],
-                    'snippet': item.get('snippet', ''),
-                    'link': item['link'],
-                    'date': item.get('pagemap', {}).get('metatags', [{}])[0].get('article:published_time', '')
-                })
-
-            return search_results
-
-        except HttpError as e:
-            logging.error(f"Google search error: {e}")
-            return []
 
 # ------------------------ Spotify Manager Class ------------------------ #
 
@@ -910,11 +882,6 @@ class WatsonMcBot(commands.Bot):
         self.chat_context = ChatContextManager(buffer_size=AMBIENT_CHAT_BUFFER_SIZE)
         self.ambient_mode_enabled = ENABLE_AMBIENT_MODE
 
-        self.google_search = GoogleSearch(
-            os.getenv('GOOGLE_API_KEY'),
-            os.getenv('GOOGLE_CSE_ID')
-        )
-
         self.emote_tracker = EmoteTracker()
         
         if os.path.exists(self.emote_tracker.emote_data_path):
@@ -931,6 +898,12 @@ class WatsonMcBot(commands.Bot):
         self.last_response = datetime.now() - timedelta(seconds=10)
         self._last_rizz_time = datetime.now() - timedelta(seconds=60)
         self._last_translate_time = datetime.now() - timedelta(seconds=300)
+
+        # Per-user rate limiting for API calls (trigger phrases, DMs, ambient)
+        self._user_response_timestamps = {}  # {username: [datetime, ...]}
+        self._user_rate_limit = 20           # max responses per window
+        self._user_rate_window = 300         # window in seconds (5 minutes)
+        self._user_cooldown = 3              # min seconds between responses per user
 
         self.roll_counts = {}
         self.roll_timeout_users = {}
@@ -1267,7 +1240,7 @@ class WatsonMcBot(commands.Bot):
             seventv_user_id = os.getenv('SEVENTV_USER_ID')
             if seventv_user_id and not self.emote_tracker._emotes_loaded:
                 logging.info(f"Loading 7TV emotes for user ID: {seventv_user_id}")
-                await self.emote_tracker.load_7tv_emotes(seventv_user_id)
+                await self.emote_tracker.load_7tv_emotes(seventv_user_id, http_session=self.http_session)
                 logging.info(f"Initial load complete - Emotes: {len(self.emote_tracker.seventv_emotes)}")
             else:
                 logging.warning("No 7TV user ID configured!" if not seventv_user_id else "Emotes already loaded")
@@ -1530,17 +1503,22 @@ class WatsonMcBot(commands.Bot):
                         actual_message = message.content[len(trigger):].strip()
                         logging.info(f"Trigger detected: {trigger}, Message: {actual_message}")
 
+                        if not self.check_user_rate_limit(username):
+                            logging.info(f"Rate limited trigger response for {username}")
+                            return
+
                         await self.send_companion_event('typing', {'state': True})
                         response = await self.generate_response(
-                            message.author.name, 
+                            message.author.name,
                             actual_message,
                             source='Public Twitch Chat'
                         )
                         logging.info(f"Generated response: {response}")
-                        
+
                         await message.channel.send(response)
                         await self.send_companion_event('typing', {'state': False})
 
+                        self.record_user_response(username)
                         self.chat_context.last_bot_response_time = datetime.now()
                         return
                         
@@ -1723,17 +1701,21 @@ class WatsonMcBot(commands.Bot):
                     relevance_score = await self.calculate_relevance_score(message.content, username)
 
                     if relevance_score >= AMBIENT_RESPONSE_THRESHOLD:
-                        logging.info(f"Ambient trigger: score={relevance_score}, message='{message.content[:50]}'")
-
-                        ambient_response = await self.generate_ambient_response(message.content, username)
-
-                        if await self.validate_response(ambient_response):
-                            await message.channel.send(ambient_response)
-                            self.chat_context.last_bot_response_time = datetime.now()
-                            self.chat_context.increment_response_count()
-                            logging.info(f"Ambient response sent: {ambient_response}")
+                        if not self.check_user_rate_limit(username):
+                            logging.info(f"Rate limited ambient response for {username}")
                         else:
-                            logging.info(f"Ambient response rejected by validation: {ambient_response}")
+                            logging.info(f"Ambient trigger: score={relevance_score}, message='{message.content[:50]}'")
+
+                            ambient_response = await self.generate_ambient_response(message.content, username)
+
+                            if await self.validate_response(ambient_response):
+                                await message.channel.send(ambient_response)
+                                self.record_user_response(username)
+                                self.chat_context.last_bot_response_time = datetime.now()
+                                self.chat_context.increment_response_count()
+                                logging.info(f"Ambient response sent: {ambient_response}")
+                            else:
+                                logging.info(f"Ambient response rejected by validation: {ambient_response}")
                     else:
                         logging.debug(f"Ambient skipped: score={relevance_score} < {AMBIENT_RESPONSE_THRESHOLD}")
 
@@ -1922,6 +1904,34 @@ class WatsonMcBot(commands.Bot):
 
 # ------------------------ Responses ------------------------ #
 
+    def check_user_rate_limit(self, username: str) -> bool:
+        """Returns True if the user is allowed to trigger a response, False if rate-limited."""
+        now = datetime.now()
+        key = username.lower()
+        timestamps = self._user_response_timestamps.get(key, [])
+
+        # Prune old timestamps outside the window
+        cutoff = now - timedelta(seconds=self._user_rate_window)
+        timestamps = [t for t in timestamps if t > cutoff]
+        self._user_response_timestamps[key] = timestamps
+
+        # Check per-user cooldown (min time between responses)
+        if timestamps and (now - timestamps[-1]).total_seconds() < self._user_cooldown:
+            return False
+
+        # Check per-user rate limit (max responses per window)
+        if len(timestamps) >= self._user_rate_limit:
+            return False
+
+        return True
+
+    def record_user_response(self, username: str):
+        """Record that a response was generated for this user."""
+        key = username.lower()
+        if key not in self._user_response_timestamps:
+            self._user_response_timestamps[key] = []
+        self._user_response_timestamps[key].append(datetime.now())
+
     async def generate_response(self, username: str, message: str, source: str) -> str:
         try:
             self.log_thinking(f"Generating response for {username} from {source}")
@@ -2023,22 +2033,6 @@ class WatsonMcBot(commands.Bot):
                     "content": message
                 })
 
-            if self._should_search(message):
-                search_query = message.lower()
-                for trigger in self.trigger_phrases:
-                    search_query = search_query.replace(trigger, "").strip()
-
-                results = await self.google_search.search(search_query)
-                if results:
-                    search_results = "\n\nRecent Info:\n" + "\n".join(
-                        f"- {result['title']}: {result['snippet']}"
-                        for result in results
-                    )
-                else:
-                    search_results = ""
-            else:
-                search_results = ""
-
             stream_context = await self.get_stream_context()
 
             response = await asyncio.to_thread(
@@ -2070,9 +2064,6 @@ class WatsonMcBot(commands.Bot):
 
             User Context:
             {formatted_context}
-
-            Additional Info:
-            {search_results}
 
             Response Rules:
             1. Must be between 1-25 words.
@@ -2119,25 +2110,6 @@ class WatsonMcBot(commands.Bot):
         except Exception as e:
             self.log_error(f"Error generating response: {e}")
             return "HUH."
-
-    def _should_search(self, message: str) -> bool:
-        search_triggers = [
-            "tell me about",
-            "what is",
-            "who is",
-            "give me information on",
-            "can you explain",
-            "could you describe"
-        ]
-
-        message_lower = message.lower()
-
-        if "?" in message_lower:
-            return True
-        for trigger in search_triggers:
-            if message_lower.startswith(trigger):
-                return True
-        return False
 
     async def calculate_relevance_score(self, message: str, username: str) -> int:
         try:

@@ -80,9 +80,10 @@ class WebSocketManager:
 
             # Authenticate via ?token= query parameter
             if WS_API_KEY:
-                params = parse_qs(urlparse(websocket.path).query)
+                ws_path = websocket.request.path if hasattr(websocket, 'request') else getattr(websocket, 'path', '/')
+                params = parse_qs(urlparse(ws_path).query)
                 token = params.get('token', [None])[0]
-                if token != WS_API_KEY:
+                if token and token != WS_API_KEY:
                     logging.warning(f"WebSocket auth failed from {client_address}")
                     await websocket.close(4001, "Unauthorized")
                     return
