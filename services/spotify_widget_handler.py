@@ -1,10 +1,8 @@
 from flask import Flask, jsonify, send_from_directory
 import logging
-from pathlib import Path
-import asyncio
 from threading import Thread
 import os
-import sys
+import time
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
@@ -26,33 +24,41 @@ class SpotifyWidgetHandler:
 
     def update_spotify_info(self):
         try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            current_track = loop.run_until_complete(self.spotify_manager.get_current_track())
+            # Refresh token if needed
+            if time.time() - self.spotify_manager.last_token_refresh > 3000 or not self.spotify_manager.spotify:
+                self.spotify_manager.initialize_client()
 
-            if current_track:
-                track_id = current_track['id']
-                
-                if track_id != self.last_track_id:
-                    self.last_track_id = track_id
-                    self.current_spotify_info = {
-                        "track_name": current_track['name'],
-                        "artist_name": current_track['artist'],
-                        "album_name": current_track['album'],
-                        "album_art_url": current_track.get('album_art_url', ''),
-                        "progress_ms": current_track.get('progress_ms', 0),
-                        "duration_ms": current_track.get('duration_ms', 0),
-                        "is_playing": current_track.get('is_playing', False)
-                    }
+            # Call spotipy directly — it's a synchronous library, no event loop needed
+            current_track = self.spotify_manager.spotify.current_user_playing_track()
+
+            if current_track and 'item' in current_track:
+                track = current_track['item']
+                album_art_url = track['album']['images'][0]['url'] if track['album']['images'] else ''
+                self.last_track_id = track['id']
+
+                self.current_spotify_info = {
+                    "track_name": track['name'],
+                    "artist_name": track['artists'][0]['name'],
+                    "album_name": track['album']['name'],
+                    "album_art_url": album_art_url,
+                    "progress_ms": current_track.get('progress_ms', 0) or 0,
+                    "duration_ms": track.get('duration_ms', 0) or 0,
+                    "is_playing": current_track.get('is_playing', False)
+                }
+            else:
+                self.current_spotify_info = {}
         except Exception as e:
             logging.error(f"Error updating Spotify info: {e}")
 
     def get_spotify_info(self):
         self.update_spotify_info()
-        return jsonify(self.current_spotify_info)
+        response = jsonify(self.current_spotify_info)
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
     def serve_widget(self):
-        return send_from_directory(self.overlays_dir, 'spotify_widget.html')
+        return send_from_directory(self.overlays_dir, 'spotify_watsonos.html')
 
     def serve_file(self, filename):
         return send_from_directory(self.overlays_dir, filename)

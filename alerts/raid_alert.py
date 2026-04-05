@@ -203,37 +203,7 @@ class RaidAlert:
             # Trigger WatsonOS browser overlay raid alert
             if hasattr(self.bot, 'overlay_manager'):
                 asyncio.create_task(self.bot.overlay_manager.trigger_raid_alert(username, viewer_count))
-            
-            await self.send_companion_event('custom_video', {
-                'video_path': self.video_path,
-                'type': 'raid_alert',
-                'duration': 7000,
-                'width': '1920px',
-                'height': '1080px',
-                'position': {
-                    'top': '0',
-                    'left': '0'
-                },
-                'animateIn': 'fadeIn',
-                'animateOut': 'fadeOut'
-            })
-            
-            await asyncio.sleep(4)
-            await self.send_companion_event('text-overlay', {
-                'content': f'{display_name} raid!',
-                'style': {
-                    'fontFamily': 'Montserrat ExtraBold',
-                    'fontSize': '64px',
-                    'color': 'white',
-                    'textShadow': '4px 4px 6px rgba(0, 0, 0, 0.5)',
-                    'position': 'absolute'
-                },
-                'position': self.text_position,
-                'animateIn': 'fadeIn',
-                'animateOut': 'fadeOut',
-                'duration': 3000
-            })
-            
+
             channel = self.bot.get_channel(os.getenv('CHANNEL_USERNAME'))
             if channel:
                 raid_message = await self.generate_raid_message(display_name, viewer_count)

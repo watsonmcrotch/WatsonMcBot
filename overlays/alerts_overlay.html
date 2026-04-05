@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Alerts</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: transparent;
+      -webkit-font-smoothing: none;
+    }
+
+    #overlay-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+    #overlay-container > * { pointer-events: auto; }
+
+    /* Screen flash */
+    .screen-flash {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      animation: flash 0.4s ease-out forwards;
+    }
+    @keyframes flash {
+      0% { opacity: 0.8; }
+      100% { opacity: 0; }
+    }
+
+    /* Alert avatar */
+    .alert-avatar {
+      width: 48px;
+      height: 48px;
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #000;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .alert-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .alert-row { display: flex; align-items: center; gap: 12px; }
+
+    .alert-text {
+      font-family: var(--wf);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .alert-text .username { font-weight: bold; color: var(--win-title); }
+    .alert-text .sub-info { color: #808080; font-size: 11px; }
+
+    /* Mega cheer */
+    .mega-text {
+      font-family: var(--tf);
+      font-size: 28px;
+      color: var(--win-title);
+      text-align: center;
+      text-shadow: 1px 1px 0 #1084d0;
+    }
+
+    /* Raid warning pulse */
+    .raid-warning {
+      animation: raid-pulse 0.5s ease infinite alternate;
+    }
+    @keyframes raid-pulse {
+      0% { box-shadow:
+        inset -1px -1px 0 #000, inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080, inset 2px 2px 0 #dfdfdf,
+        0 0 15px rgba(255,0,0,0.5); }
+      100% { box-shadow:
+        inset -1px -1px 0 #000, inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080, inset 2px 2px 0 #dfdfdf,
+        0 0 30px rgba(255,0,0,0.8); }
+    }
+
+    /* Raid accepted */
+    .raid-accepted {
+      box-shadow:
+        inset -1px -1px 0 #000, inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080, inset 2px 2px 0 #dfdfdf,
+        0 0 20px rgba(0,200,0,0.4) !important;
+    }
+    .raid-accepted .w95-titlebar {
+      background: linear-gradient(90deg, #006600, #00aa00) !important;
+    }
+
+    /* 69-bit spam popups */
+    .spam-popup { z-index: 5000; }
+    .spam-popup .w95-titlebar {
+      background: linear-gradient(90deg, #ff0000, #ff6600) !important;
+    }
+    .spam-popup .w95-body {
+      background: #ffff00;
+      text-align: center;
+      font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .spam-blink {
+      animation: spam-blink-anim 0.3s step-end infinite;
+    }
+    @keyframes spam-blink-anim {
+      0%, 100% { color: #ff0000; }
+      50% { color: #0000ff; }
+    }
+
+    /* File transfer */
+    .ft-file-icon { font-size: 24px; text-align: center; margin-bottom: 6px; }
+    .ft-filename { font-family: var(--wf); font-size: 11px; color: #808080; }
+
+    /* Shake on appear */
+    .alert-shake { animation: w95-shake 0.5s ease; }
+
+    /* Intro boot sequence removed — now handled by video stinger transition in OBS */
+
+  </style>
+</head>
+<body>
+  <div id="overlay-container"></div>
+
+  <script src="./assets/js/watsonos.js"></script>
+  <script>
+    WatsonOS.connect();
+    const container = document.getElementById('overlay-container');
+    const cursor = WatsonOS.createCursor();
+    cursor.style.display = 'none';
+    document.body.appendChild(cursor);
+
+    /* ── Alert Queue ── */
+    const alertQueue = [];
+    let alertBusy = false;
+
+    function queueAlert(handler) {
+      alertQueue.push(handler);
+      processQueue();
+    }
+
+    function processQueue() {
+      if (alertBusy || alertQueue.length === 0) return;
+      alertBusy = true;
+      alertQueue.shift()(() => {
+        alertBusy = false;
+        setTimeout(processQueue, 300);
+      });
+    }
+
+    function fireImmediate(handler) {
+      handler(() => {});
+    }
+
+    /* ── Cursor Helpers ── */
+    function showCursorOffscreen() {
+      const edges = [
+        { x: -30, y: WatsonOS.randomInt(200, 880) },
+        { x: 1950, y: WatsonOS.randomInt(200, 880) },
+        { x: WatsonOS.randomInt(400, 1520), y: -30 },
+        { x: WatsonOS.randomInt(400, 1520), y: 1110 },
+      ];
+      const edge = edges[WatsonOS.randomInt(0, 3)];
+      cursor.style.transition = 'none';
+      cursor.style.left = edge.x + 'px';
+      cursor.style.top = edge.y + 'px';
+      cursor.style.display = 'block';
+    }
+
+    function hideCursor() { cursor.style.display = 'none'; }
+
+    function centerPos() {
+      return {
+        x: 760 + WatsonOS.randomInt(-80, 80),
+        y: 400 + WatsonOS.randomInt(-60, 60)
+      };
+    }
+
+    function avatarHTML(username) {
+      var safe = WatsonOS.escapeHtml(username);
+      return '<div class="alert-avatar"><img src="https://decapi.me/twitch/avatar/' +
+        encodeURIComponent(username) + '" onerror="this.parentNode.innerHTML=\'&#x1F464;\'" alt="' +
+        safe + '"></div>';
+    }
+
+    /* Standard flow: show popup, cursor enters from off-screen, moves to button, clicks, dismisses */
+    async function standardAlert(win, btnId, waitMs, done) {
+      WatsonOS.showWindow(win, container);
+      showCursorOffscreen();
+
+      await WatsonOS.delay(waitMs);
+
+      var btn = document.getElementById(btnId);
+      if (btn) {
+        var r = btn.getBoundingClientRect();
+        WatsonOS.moveCursorNatural(cursor, r.left + r.width / 2 - 5, r.top + r.height / 2 - 2, 600, function() {
+          WatsonOS.clickButton(btn);
+          setTimeout(function() {
+            WatsonOS.dismissWindow(win, function() { hideCursor(); if (done) done(); });
+          }, 200);
+        });
+      } else {
+        WatsonOS.dismissWindow(win, function() { hideCursor(); if (done) done(); });
+      }
+    }
+
+    /* ════════════ FOLLOW ════════════ */
+    WatsonOS.on('watsonos_follow', function(data) {
+      queueAlert(function(done) {
+        var username = data.username || 'Someone';
+        var safe = WatsonOS.escapeHtml(username);
+        var pos = centerPos();
+        var btnId = 'follow-ok-' + Date.now();
+
+        var win = WatsonOS.createWindow({
+          title: 'New Follower Detected',
+          icon: '\uD83D\uDCCB',
+          width: 380,
+          x: pos.x, y: pos.y,
+          bodyHTML: '<div class="alert-row">' + avatarHTML(username) +
+            '<div class="alert-text"><span class="username">' + safe +
+            '</span> just followed!<br>Thank you!<br><span class="sub-info">' +
+            safe + ' has been added to the registry.</span></div></div>',
+          buttons: [{ label: 'OK', id: btnId }],
+          id: 'follow-' + Date.now()
+        });
+
+        WatsonOS.playSound('./assets/sounds/follower.mp3');
+        standardAlert(win, btnId, 3000, done);
+      });
+    });
+
+    /* ════════════ BITS ════════════ */
+    WatsonOS.on('watsonos_bits', function(data) {
+      var bits = parseInt(data.bits) || 0;
+      var username = data.username || 'Someone';
+      var safe = WatsonOS.escapeHtml(username);
+
+      /* 69 bits — SPAM MODE (bypasses queue) */
+      if (bits === 69) {
+        fireImmediate(async function(done) {
+          var titles = [
+            'HOT SINGLES IN YOUR AREA!', 'ENLARGE YOUR... BITS?!',
+            'YOU WON $1,000,000!', 'FREE iPOD CLICK HERE!',
+            'CONGRATULATIONS!!!', 'YOUR PC HAS A VIRUS!',
+            'DOWNLOAD MORE RAM', 'ONE WEIRD TRICK!'
+          ];
+          var spamCount = WatsonOS.randomInt(5, 8);
+          var popups = [];
+          WatsonOS.playSound('./assets/sounds/nice.mp3');
+
+          for (var i = 0; i < spamCount; i++) {
+            await WatsonOS.delay(WatsonOS.randomInt(100, 300));
+            var title = titles[WatsonOS.randomInt(0, titles.length - 1)];
+            var colors = ['#ff0000','#ff6600','#ff00ff','#00ff00','#ffff00'];
+            var win = WatsonOS.createWindow({
+              title: title,
+              width: WatsonOS.randomInt(250, 380),
+              x: WatsonOS.randomInt(100, 1500),
+              y: WatsonOS.randomInt(50, 800),
+              bodyHTML: '<div style="font-family:\'Comic Sans MS\',cursive;font-size:' +
+                WatsonOS.randomInt(12,18) + 'px;font-weight:bold"><span class="spam-blink">' +
+                safe + ' cheered 69 bits!</span><br><span style="color:' +
+                colors[WatsonOS.randomInt(0, colors.length - 1)] +
+                ';font-size:' + WatsonOS.randomInt(16,24) + 'px">nice.</span></div>',
+              buttons: [{ label: 'CLOSE', id: 'spam-btn-' + i + '-' + Date.now() }],
+              className: 'spam-popup',
+              id: 'spam-' + i + '-' + Date.now()
+            });
+            WatsonOS.showWindow(win, container);
+            popups.push(win);
+          }
+
+          await WatsonOS.delay(5000);
+          showCursorOffscreen();
+          await WatsonOS.delay(300);
+
+          for (var j = 0; j < popups.length; j++) {
+            var popup = popups[j];
+            if (!popup.parentNode) continue;
+            var btn = popup.querySelector('.w95-title-btn');
+            if (btn) {
+              var r = btn.getBoundingClientRect();
+              WatsonOS.moveCursorNatural(cursor, r.left + 8, r.top + 7, 200, function() {
+                WatsonOS.clickButton(btn);
+              });
+              await WatsonOS.delay(280);
+              WatsonOS.dismissWindow(popup);
+            }
+          }
+          hideCursor();
+          done();
+        });
+        return;
+      }
+
+      /* 1000+ bits — BSOD then cheer */
+      if (bits >= 1000) {
+        queueAlert(async function(done) {
+          WatsonOS.playSound('./assets/sounds/error.mp3');
+          var bsod = document.createElement('div');
+          bsod.className = 'w95-bsod';
+          bsod.innerHTML =
+            '<div class="w95-bsod-header">WatsonOS</div>' +
+            '<div class="w95-bsod-text">A fatal exception CHEER_OVERFLOW has occurred at 0x' +
+            bits.toString(16).toUpperCase().padStart(8,'0') +
+            '.<br><br>The current application will be terminated.<br><br>' +
+            '* Press any key to acknowledge the generous donation from ' + safe +
+            '.<br>* Press CTRL+ALT+DEL to restart your computer. You will<br>' +
+            '  lose any unsaved information in all applications.</div>' +
+            '<div class="w95-bsod-footer">Press any key to continue _</div>';
+          container.appendChild(bsod);
+
+          await WatsonOS.delay(4000);
+          bsod.style.transition = 'opacity 0.3s';
+          bsod.style.opacity = '0';
+          await WatsonOS.delay(300);
+          if (bsod.parentNode) bsod.parentNode.removeChild(bsod);
+
+          var flash = document.createElement('div');
+          flash.className = 'screen-flash';
+          container.appendChild(flash);
+          setTimeout(function() { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 500);
+
+          var pos = centerPos();
+          var btnId = 'bsod-ok-' + Date.now();
+          var win = WatsonOS.createWindow({
+            title: 'MEGA CHEER!', icon: '\uD83D\uDD25', width: 400,
+            x: pos.x, y: pos.y,
+            bodyHTML: '<div style="text-align:center;padding:8px"><div class="mega-text">' +
+              bits + ' BITS!</div><div class="alert-text" style="margin-top:8px"><span class="username">' +
+              safe + '</span> just crashed the system<br>with a massive cheer!</div></div>',
+            buttons: [{ label: 'Reboot', id: btnId }],
+            id: 'bsod-cheer-' + Date.now()
+          });
+          standardAlert(win, btnId, 3000, done);
+        });
+        return;
+      }
+
+      /* 100-999 bits — MEGA CHEER */
+      if (bits >= 100) {
+        queueAlert(async function(done) {
+          WatsonOS.playSound('./assets/sounds/bit_mega.mp3');
+          var flash = document.createElement('div');
+          flash.className = 'screen-flash';
+          container.appendChild(flash);
+          setTimeout(function() { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 500);
+
+          var pos = centerPos();
+          var btnId = 'mega-ok-' + Date.now();
+          var win = WatsonOS.createWindow({
+            title: 'MEGA CHEER!', icon: '\uD83D\uDD25', width: 400,
+            x: pos.x, y: pos.y,
+            bodyHTML: '<div style="text-align:center;padding:8px"><div class="mega-text">' +
+              bits + ' BITS!</div><div class="alert-text" style="margin-top:8px"><span class="username">' +
+              safe + '</span> cheered ' + bits + ' bits!</div></div>',
+            buttons: [{ label: 'Amazing!', id: btnId }],
+            id: 'mega-' + Date.now()
+          });
+          standardAlert(win, btnId, 5000, done);
+        });
+        return;
+      }
+
+      /* 10-99 bits (except 69) — MID CHEER */
+      if (bits >= 10) {
+        queueAlert(function(done) {
+          WatsonOS.playSound('./assets/sounds/bit_mid.mp3');
+          var pos = centerPos();
+          var btnId = 'mid-ok-' + Date.now();
+          var win = WatsonOS.createWindow({
+            title: 'Cheer Alert!', icon: '\uD83C\uDF89', width: 360,
+            x: pos.x, y: pos.y,
+            bodyHTML: '<div class="alert-text" style="text-align:center;padding:4px"><span class="username">' +
+              safe + '</span> cheered <strong>' + bits + '</strong> bits!</div>',
+            buttons: [{ label: 'Thanks!', id: btnId }],
+            className: 'alert-shake',
+            id: 'mid-' + Date.now()
+          });
+          standardAlert(win, btnId, 4000, done);
+        });
+        return;
+      }
+
+      /* 1-9 bits — SMALL CHEER */
+      queueAlert(function(done) {
+        WatsonOS.playSound('./assets/sounds/bit_small.mp3');
+        var pos = centerPos();
+        var btnId = 'small-ok-' + Date.now();
+        var win = WatsonOS.createWindow({
+          title: 'Cheer Alert', icon: '\uD83D\uDCB0', width: 320,
+          x: pos.x, y: pos.y,
+          bodyHTML: '<div class="alert-text"><span class="username">' +
+            safe + '</span> cheered ' + bits + ' bits!</div>',
+          buttons: [{ label: 'Thanks!', id: btnId }],
+          id: 'small-' + Date.now()
+        });
+        standardAlert(win, btnId, 3000, done);
+      });
+    });
+
+    /* ════════════ RAID ════════════ */
+    WatsonOS.on('watsonos_raid', function(data) {
+      queueAlert(async function(done) {
+        var username = data.username || 'Someone';
+        var viewers = data.viewer_count || 0;
+        var safe = WatsonOS.escapeHtml(username);
+
+        WatsonOS.playSound('./assets/sounds/raid_warning.mp3');
+
+        // Phase 1: Warning
+        var pos1 = centerPos();
+        var btnId1 = 'raid-warn-' + Date.now();
+        var warn = WatsonOS.createWindow({
+          title: 'WARNING: Incoming Connection', icon: '\u26A0\uFE0F', width: 420,
+          x: pos1.x, y: pos1.y,
+          bodyHTML: '<div class="alert-row">' + avatarHTML(username) +
+            '<div class="alert-text" style="color:#cc0000;font-weight:bold">' +
+            'INCOMING CONNECTION ATTEMPT<br>FROM <span class="username">' + safe +
+            '</span>...<br><br><span style="font-size:14px">' + viewers +
+            ' connections detected</span></div></div>',
+          buttons: [{ label: 'Accept', id: btnId1 }],
+          className: 'raid-warning',
+          id: 'raid-warn-' + Date.now()
+        });
+
+        WatsonOS.showWindow(warn, container);
+        showCursorOffscreen();
+        await WatsonOS.delay(3000);
+
+        var btn1 = document.getElementById(btnId1);
+        if (btn1) {
+          var r1 = btn1.getBoundingClientRect();
+          WatsonOS.moveCursorNatural(cursor, r1.left + r1.width / 2 - 5, r1.top + r1.height / 2 - 2, 500, function() {
+            WatsonOS.clickButton(btn1);
+          });
+        }
+        await WatsonOS.delay(400);
+        WatsonOS.dismissWindow(warn);
+
+        WatsonOS.playSound('./assets/sounds/raid_accept.mp3');
+
+        // Phase 2: Accepted
+        var pos2 = centerPos();
+        var btnId2 = 'raid-ok-' + Date.now();
+        var accept = WatsonOS.createWindow({
+          title: 'Connection Accepted', icon: '\u2705', width: 420,
+          x: pos2.x, y: pos2.y,
+          bodyHTML: '<div class="alert-row">' + avatarHTML(username) +
+            '<div class="alert-text"><span class="username">' + safe +
+            '</span> has connected with <strong>' + viewers +
+            '</strong> viewers!<br><br>Welcome raiders!</div></div>',
+          buttons: [{ label: 'Welcome!', id: btnId2 }],
+          className: 'raid-accepted',
+          id: 'raid-ok-' + Date.now()
+        });
+
+        WatsonOS.showWindow(accept, container);
+        await WatsonOS.delay(4000);
+
+        var btn2 = document.getElementById(btnId2);
+        if (btn2) {
+          var r2 = btn2.getBoundingClientRect();
+          WatsonOS.moveCursorNatural(cursor, r2.left + r2.width / 2 - 5, r2.top + r2.height / 2 - 2, 500, function() {
+            WatsonOS.clickButton(btn2);
+            setTimeout(function() {
+              WatsonOS.dismissWindow(accept, function() { hideCursor(); done(); });
+            }, 200);
+          });
+        } else {
+          WatsonOS.dismissWindow(accept, function() { hideCursor(); done(); });
+        }
+      });
+    });
+
+    /* ════════════ SUB ════════════ */
+    WatsonOS.on('watsonos_sub', function(data) {
+      queueAlert(async function(done) {
+        var username = data.username || 'Someone';
+        var tier = parseInt(data.tier) || 1;
+        var isResub = data.is_resub || false;
+        var months = data.cumulative_months || 0;
+        var safe = WatsonOS.escapeHtml(username);
+
+        WatsonOS.playSound('./assets/sounds/sub_alert.mp3');
+
+        var tierLabel = tier === 3 ? 'Tier 3' : tier === 2 ? 'Tier 2' : 'Tier 1';
+        var subText = '<span class="username">' + safe + '</span> just subscribed!<br>' + tierLabel;
+        if (isResub && months > 1) {
+          subText += '<br><span class="sub-info">' + months + ' months in a row!</span>';
+        }
+
+        if (tier >= 3) {
+          var flash = document.createElement('div');
+          flash.className = 'screen-flash';
+          container.appendChild(flash);
+          setTimeout(function() { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 500);
+        }
+
+        var pos = centerPos();
+        var btnId = 'sub-ok-' + Date.now();
+        var win = WatsonOS.createWindow({
+          title: 'Subscription Alert', icon: '\u2B50', width: 380,
+          x: pos.x, y: pos.y,
+          bodyHTML: '<div class="alert-row">' + avatarHTML(username) +
+            '<div class="alert-text">' + subText + '</div></div>',
+          buttons: [{ label: 'Welcome!', id: btnId }],
+          className: tier >= 2 ? 'alert-shake' : '',
+          id: 'sub-' + Date.now()
+        });
+        standardAlert(win, btnId, 4000, done);
+      });
+    });
+
+    /* ════════════ GIFT SUB ════════════ */
+    WatsonOS.on('watsonos_giftsub', function(data) {
+      var gifter = data.gifter || 'Someone';
+      var totalSubs = parseInt(data.total_subs) || 1;
+      var safe = WatsonOS.escapeHtml(gifter);
+
+      /* 5+ gifts — mass transfer windows (bypasses queue) */
+      if (totalSubs >= 5) {
+        fireImmediate(async function(done) {
+          WatsonOS.playSound('./assets/sounds/giftsub_mass.mp3');
+          var popups = [];
+          var count = Math.min(totalSubs, 8);
+
+          for (var i = 0; i < count; i++) {
+            await WatsonOS.delay(WatsonOS.randomInt(200, 500));
+            var barId = 'ft-bar-m-' + i + '-' + Date.now();
+            var win = WatsonOS.createWindow({
+              title: 'File Transfer \u2014 Gift Subscription', icon: '\uD83D\uDCC1',
+              width: 350,
+              x: WatsonOS.randomInt(200, 1400),
+              y: WatsonOS.randomInt(100, 700),
+              bodyHTML: '<div class="ft-file-icon">\uD83D\uDCE6\u27A1\uFE0F\uD83C\uDF81</div>' +
+                '<div class="alert-text">' + safe + ' is gifting sub ' + (i + 1) +
+                ' of ' + totalSubs + '...</div>' +
+                '<div style="margin:8px 0"><div class="w95-progress"><div class="w95-progress-fill" id="' +
+                barId + '" style="width:0%"></div></div></div>' +
+                '<div class="ft-filename">gift_sub_' + (i + 1) + '.exe</div>',
+              buttons: [],
+              id: 'ft-m-' + i + '-' + Date.now()
+            });
+            WatsonOS.showWindow(win, container);
+            popups.push(win);
+
+            var bar = document.getElementById(barId);
+            if (bar) setTimeout(function(b) { b.style.width = '100%'; }, 100, bar);
+          }
+
+          await WatsonOS.delay(4000);
+          showCursorOffscreen();
+          await WatsonOS.delay(300);
+
+          for (var j = 0; j < popups.length; j++) {
+            var popup = popups[j];
+            if (!popup.parentNode) continue;
+            var btn = popup.querySelector('.w95-title-btn');
+            if (btn) {
+              var r = btn.getBoundingClientRect();
+              WatsonOS.moveCursorNatural(cursor, r.left + 8, r.top + 7, 200, function() {
+                WatsonOS.clickButton(btn);
+              });
+              await WatsonOS.delay(250);
+              WatsonOS.dismissWindow(popup);
+            }
+          }
+          hideCursor();
+          done();
+        });
+        return;
+      }
+
+      /* 1-4 gifts — single file transfer window */
+      queueAlert(async function(done) {
+        WatsonOS.playSound('./assets/sounds/giftsub.mp3');
+        var pos = centerPos();
+        var btnId = 'ft-ok-' + Date.now();
+        var barId = 'ft-bar-' + Date.now();
+        var statusId = 'ft-status-' + Date.now();
+
+        var win = WatsonOS.createWindow({
+          title: 'File Transfer \u2014 Gift Subscription', icon: '\uD83D\uDCC1',
+          width: 380,
+          x: pos.x, y: pos.y,
+          bodyHTML: '<div class="ft-file-icon">\uD83D\uDCE6\u27A1\uFE0F\uD83C\uDF81</div>' +
+            '<div class="alert-text">' + safe + ' is sending ' +
+            (totalSubs > 1 ? totalSubs + ' subscriptions' : 'a subscription') + '...</div>' +
+            '<div style="margin:8px 0"><div class="w95-progress"><div class="w95-progress-fill" id="' +
+            barId + '" style="width:0%"></div></div></div>' +
+            '<div class="ft-filename" id="' + statusId + '">Transferring gift_sub.exe...</div>',
+          buttons: [{ label: 'OK', id: btnId }],
+          id: 'giftsub-' + Date.now()
+        });
+
+        WatsonOS.showWindow(win, container);
+        showCursorOffscreen();
+
+        await WatsonOS.delay(100);
+        var bar = document.getElementById(barId);
+        if (bar) bar.style.width = '100%';
+
+        await WatsonOS.delay(3000);
+        var status = document.getElementById(statusId);
+        if (status) status.textContent = 'Transfer Complete!';
+
+        await WatsonOS.delay(1000);
+
+        var btn = document.getElementById(btnId);
+        if (btn) {
+          var r = btn.getBoundingClientRect();
+          WatsonOS.moveCursorNatural(cursor, r.left + r.width / 2 - 5, r.top + r.height / 2 - 2, 600, function() {
+            WatsonOS.clickButton(btn);
+            setTimeout(function() {
+              WatsonOS.dismissWindow(win, function() { hideCursor(); done(); });
+            }, 200);
+          });
+        } else {
+          WatsonOS.dismissWindow(win, function() { hideCursor(); done(); });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

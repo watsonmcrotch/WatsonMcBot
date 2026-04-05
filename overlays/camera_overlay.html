@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Camera</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: transparent;
+      -webkit-font-smoothing: none;
+    }
+
+    /* Camera frame — 3:2 aspect ratio, top-right */
+    .camera-frame {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 420px;   /* 3:2 ratio: 420x280 */
+      height: 280px;
+      background: var(--win-gray);
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+    }
+
+    .cam-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 3px;
+      height: 22px;
+      user-select: none;
+      background: linear-gradient(90deg, #7b2d8e, #2ec4b6);
+    }
+    .cam-titlebar span {
+      color: #fff;
+      font-weight: bold;
+      font-size: 11px;
+      font-family: var(--wf);
+      padding-left: 4px;
+    }
+    .cam-controls {
+      display: flex;
+      gap: 2px;
+    }
+    .cam-controls button {
+      width: 18px;
+      height: 16px;
+      background: var(--win-gray);
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-size: 10px;
+      font-weight: bold;
+      font-family: var(--wf);
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .cam-controls button:active {
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #000,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #808080;
+    }
+
+    /* Camera viewport — sunken area where webcam shows through */
+    .cam-viewport {
+      margin: 3px;
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #000;
+      background: transparent;
+      height: calc(100% - 22px - 6px - 20px);
+    }
+
+    /* Status bar */
+    .cam-status {
+      display: flex;
+      gap: 2px;
+      padding: 2px 3px;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+    .cam-status span {
+      flex: 1;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-family: var(--wf);
+      box-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080;
+      background: var(--win-gray);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: #ff0000;
+      border-radius: 50%;
+      animation: pulse-live 1s ease-in-out infinite;
+    }
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; box-shadow: 0 0 3px #f00; }
+      50% { opacity: 0.4; box-shadow: 0 0 8px #f00; }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="camera-frame">
+    <div class="cam-titlebar">
+      <span>📹 camera.exe — WatsonMcRotch</span>
+      <div class="cam-controls">
+        <button>–</button>
+        <button>□</button>
+        <button>×</button>
+      </div>
+    </div>
+    <div class="cam-viewport"></div>
+    <div class="cam-status">
+      <span><div class="live-dot"></div> LIVE</span>
+      <span>640×480 @ 30fps</span>
+      <span id="cam-clock"></span>
+    </div>
+  </div>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById('cam-clock').textContent = h + ':' + m;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>

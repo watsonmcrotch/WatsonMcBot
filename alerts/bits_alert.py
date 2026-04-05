@@ -144,33 +144,19 @@ class BitAlert:
             logging.error(f"Error generating TTS: {e}")
             return False
 
-    def get_video_path(self, bits: int) -> str:
-        if bits == 1:
-            return "assets/videos/1 bit.webm"
-        elif 2 <= bits <= 9:
-            return f"assets/videos/{bits} bits.webm"
-        elif bits == 69:
-            return "assets/videos/69 Bits Alert.webm"
-        elif 10 <= bits <= 99:
-            return "assets/videos/10 - 99 Bits Alert.webm"
-        elif 100 <= bits <= 999:
-            return "assets/videos/100 - 999 Bits Alert.webm"
-        else:
-            return "assets/videos/1000 Plus Bits Alert.webm"
-
     async def trigger(self, username: str, bits: int, message: str = ""):
         try:
             if not hasattr(self, "_last_trigger"):
                 self._last_trigger = {}
-            
+
             current_time = time.time()
             trigger_key = f"{username}_{bits}"
-            
+
             if trigger_key in self._last_trigger:
                 if current_time - self._last_trigger[trigger_key] < 5:
                     logging.info(f"Ignoring duplicate bit alert for {username} ({bits} bits)")
                     return
-        
+
             self._last_trigger[trigger_key] = current_time
             user_context = await asyncio.to_thread(self.bot.db_manager.get_user_context, username)
             display_name = user_context.get('nickname', username)
@@ -179,21 +165,6 @@ class BitAlert:
             if hasattr(self.bot, 'overlay_manager'):
                 asyncio.create_task(self.bot.overlay_manager.trigger_bits_alert(username, bits))
 
-            video_path = self.get_video_path(bits)
-            
-            await self.send_companion_event('custom_video', {
-                'video_path': video_path,
-                'type': 'bit_alert',
-                'width': '1920px',
-                'height': '1080px',
-                'position': {
-                    'top': '0',
-                    'left': '0'
-                }
-            })
-
-            await asyncio.sleep(3)
-
             if bits >= 100:
                 if bits >= 1000:
                     asyncio.create_task(self.flash_lights_1000_plus())
@@ -201,27 +172,8 @@ class BitAlert:
                     asyncio.create_task(self.flash_lights_100_plus())
 
             if bits >= 10:
-                await asyncio.sleep(0.2)
-                await self.send_companion_event('text-overlay', {
-                    'content': f'{display_name} cheered {bits} bits!',
-                    'style': {
-                        'fontFamily': 'Montserrat ExtraBold',
-                        'fontSize': '60px',
-                        'color': 'white',
-                        'textShadow': '4px 4px 6px rgba(0, 0, 0, 0.6)',
-                        'position': 'absolute'
-                    },
-                    'position': {
-                        'bottom': '220px',
-                        'right': '220px'
-                    },
-                    'animateIn': 'fadeIn',
-                    'animateOut': 'fadeOut',
-                    'duration': 4000
-                })
-
                 await asyncio.sleep(1)
-                
+
                 cleaned_message = self.clean_cheer_message(message)
                 tts_text = cleaned_message if cleaned_message else f"{display_name} cheered {bits} bits!"
 

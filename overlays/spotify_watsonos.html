@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Spotify</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      overflow: hidden;
+      background: transparent;
+      -webkit-font-smoothing: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .player-window {
+      width: 520px;
+      height: 163px;
+      background: var(--win-gray);
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-family: var(--wf);
+      font-size: 12px;
+      color: var(--win-text);
+      display: none;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Title bar ── */
+    .player-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 3px;
+      height: 22px;
+      user-select: none;
+      background: linear-gradient(90deg, #7b2d8e, #2ec4b6);
+    }
+    .player-title-text {
+      color: #fff;
+      font-weight: bold;
+      font-size: 11px;
+      padding-left: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .player-controls-top {
+      display: flex;
+      gap: 2px;
+    }
+    .player-controls-top button {
+      width: 18px;
+      height: 16px;
+      background: var(--win-gray);
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-size: 10px;
+      font-weight: bold;
+      font-family: var(--wf);
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .player-controls-top button:active {
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #000,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #808080;
+    }
+
+    /* ── Content area — clipped inside window chrome ── */
+    .player-content {
+      overflow: hidden;
+      height: calc(100% - 22px);
+      margin: 0 2px 2px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Now Playing ── */
+    .player-body {
+      padding: 6px 8px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .album-frame {
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #000;
+      width: 92px;
+      height: 92px;
+      background: #000;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .album-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .track-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    /* ── Scrolling text overflow ── */
+    .scroll-wrap {
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .scroll-wrap span {
+      display: inline-block;
+    }
+    .scroll-wrap.overflowing span {
+      animation: marquee var(--scroll-dur, 8s) linear infinite;
+      padding-right: 40px;
+    }
+    @keyframes marquee {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .track-title {
+      font-weight: bold;
+      font-size: 16px;
+      color: #000;
+    }
+    .track-artist {
+      font-size: 14px;
+      color: #5a1a6e;
+    }
+    .track-album {
+      font-size: 12px;
+      color: #555;
+      font-style: italic;
+    }
+
+    /* ── Inline EQ — bare bars on gray, right of track info ── */
+    .eq-inline {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 48px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    .eq-inline .bar {
+      width: 4px;
+      border-radius: 0;
+      animation: eq-step var(--d, 0.6s) steps(6) infinite alternate;
+      transform-origin: bottom;
+    }
+    .eq-inline .bar:nth-child(1)  { --d:0.42s; --h:14px; background:#7b2d8e; }
+    .eq-inline .bar:nth-child(2)  { --d:0.58s; --h:28px; background:#6e3994; }
+    .eq-inline .bar:nth-child(3)  { --d:0.33s; --h:10px; background:#56499b; }
+    .eq-inline .bar:nth-child(4)  { --d:0.71s; --h:38px; background:#3e5ea2; }
+    .eq-inline .bar:nth-child(5)  { --d:0.39s; --h:20px; background:#3274a6; }
+    .eq-inline .bar:nth-child(6)  { --d:0.63s; --h:32px; background:#2a97ac; }
+    .eq-inline .bar:nth-child(7)  { --d:0.47s; --h:12px; background:#2cb8b3; }
+    .eq-inline .bar:nth-child(8)  { --d:0.55s; --h:36px; background:#2ec4b6; }
+
+    @keyframes eq-step {
+      0%   { height: 2px; }
+      100% { height: var(--h, 16px); }
+    }
+
+    .eq-paused .bar {
+      animation: none !important;
+      height: 2px !important;
+      opacity: 0.3;
+    }
+
+    /* ── Progress section ── */
+    .progress-section {
+      padding: 2px 8px 10px;
+      flex-shrink: 0;
+    }
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-family: var(--tf);
+      color: #808080;
+      line-height: 14px;
+      margin-bottom: 1px;
+    }
+
+    .progress-solid {
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #000;
+      background: var(--win-gray);
+      padding: 2px;
+      height: 12px;
+    }
+    .progress-solid-fill {
+      height: 100%;
+      background: #7b2d8e;
+      transition: width 0.3s linear;
+    }
+  </style>
+</head>
+<body>
+  <div class="player-window" id="player">
+    <div class="player-titlebar">
+      <span class="player-title-text">🎵 media_player.exe</span>
+      <div class="player-controls-top">
+        <button>–</button>
+        <button>□</button>
+        <button>×</button>
+      </div>
+    </div>
+
+    <div class="player-content">
+      <div class="player-body">
+        <div class="album-frame">
+          <img id="album-art" src="" alt="Album Art">
+        </div>
+        <div class="track-info">
+          <div class="track-title scroll-wrap" id="track-name"><span>No track playing</span></div>
+          <div class="track-artist scroll-wrap" id="artist-name"><span></span></div>
+          <div class="track-album scroll-wrap" id="album-name"><span></span></div>
+        </div>
+        <div class="eq-inline" id="eq">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+      </div>
+      <div class="progress-section">
+        <div class="time-row">
+          <span id="time-current">--:--</span>
+          <span id="time-total">--:--</span>
+        </div>
+        <div class="progress-solid">
+          <div class="progress-solid-fill" id="progress-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./assets/js/watsonos.js"></script>
+  <script>
+    var lastAlbumArt = '';
+    var lastTrackName = '';
+    var durationMs = 0;
+    var isPlaying = false;
+    var anchorProgress = 0;
+    var anchorTime = 0;
+
+    function setScrollText(id, text) {
+      var wrap = document.getElementById(id);
+      var span = wrap.querySelector('span');
+      span.textContent = text;
+      wrap.classList.remove('overflowing');
+      requestAnimationFrame(function() {
+        if (span.scrollWidth > wrap.clientWidth) {
+          span.textContent = text + '     ' + text + '     ';
+          var dur = Math.max(text.length * 0.3, 4);
+          wrap.style.setProperty('--scroll-dur', dur + 's');
+          wrap.classList.add('overflowing');
+        }
+      });
+    }
+
+    function formatTime(ms) {
+      if (!ms || ms === 0 || isNaN(ms)) return '--:--';
+      var minutes = Math.floor(ms / 60000);
+      var seconds = Math.floor((ms % 60000) / 1000);
+      return minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+    }
+
+    function getCurrentProgress() {
+      if (!isPlaying || durationMs === 0) return anchorProgress;
+      return Math.min(anchorProgress + (Date.now() - anchorTime), durationMs);
+    }
+
+    function updateTimer() {
+      var current = getCurrentProgress();
+      document.getElementById('time-current').textContent = formatTime(current);
+      document.getElementById('time-total').textContent = formatTime(durationMs);
+      if (durationMs > 0) {
+        var pct = Math.min((current / durationMs) * 100, 100);
+        document.getElementById('progress-bar').style.width = pct + '%';
+      }
+    }
+
+    async function fetchSpotifyData() {
+      try {
+        var response = await fetch('http://localhost:7500/spotify_info?_=' + Date.now());
+        if (!response.ok) {
+          document.getElementById('player').style.display = 'none';
+          return;
+        }
+        var data = await response.json();
+        if (!data || Object.keys(data).length === 0) {
+          document.getElementById('player').style.display = 'none';
+          return;
+        }
+
+        document.getElementById('player').style.display = 'block';
+
+        var trackName = data.track_name || 'Unknown';
+        var trackChanged = trackName !== lastTrackName;
+        var playStateChanged = !!data.is_playing !== isPlaying;
+
+        if (!anchorTime || trackChanged || playStateChanged) {
+          anchorProgress = data.progress_ms || 0;
+          anchorTime = Date.now();
+        }
+
+        setScrollText('track-name', trackName);
+        setScrollText('artist-name', data.artist_name || '');
+        setScrollText('album-name', data.album_name || '');
+        durationMs = data.duration_ms || 0;
+        lastTrackName = trackName;
+
+        if (data.album_art_url && data.album_art_url !== lastAlbumArt) {
+          lastAlbumArt = data.album_art_url;
+          document.getElementById('album-art').src = lastAlbumArt;
+        }
+
+        if (data.is_playing) {
+          isPlaying = true;
+          document.getElementById('eq').classList.remove('eq-paused');
+        } else {
+          isPlaying = false;
+          document.getElementById('eq').classList.add('eq-paused');
+        }
+      } catch (error) {
+        document.getElementById('player').style.display = 'none';
+      }
+    }
+
+    setInterval(fetchSpotifyData, 5000);
+    setInterval(updateTimer, 500);
+    fetchSpotifyData();
+  </script>
+</body>
+</html>

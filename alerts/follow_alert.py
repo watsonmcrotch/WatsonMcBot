@@ -40,44 +40,8 @@ class FollowAlert:
             logging.error(f"Error in follow alert for {username}: {e}")
 
     async def send_overlay_alert(self, username):
-        try:
-            video_path = str(self.video_path)
-            logging.info(f"Sending alert with video path: {video_path}")
-            
-            await asyncio.gather(
-                self.send_companion_event('custom_video', {
-                    'video_path': video_path,
-                    'type': 'follow_alert',
-                    'width': '1920px',
-                    'height': '1080px',
-                    'position': {
-                        'top': '0',
-                        'left': '0'
-                    },
-                    'animateIn': 'fadeIn',
-                    'animateOut': 'fadeOut',
-                    'duration': 5000
-                }),
-                self.send_companion_event('text-overlay', {
-                    'content': f'{username} just followed!',
-                    'style': {
-                        'fontFamily': 'Montserrat ExtraBold',
-                        'fontSize': '64px',
-                        'color': 'white',
-                        'textShadow': '4px 4px 6px rgba(0, 0, 0, 0.5)',
-                        'position': 'absolute',
-                    },
-                    'position': {
-                        'top': '40px',
-                        'left': '60px'
-                    },
-                    'animateIn': 'fadeIn',
-                    'animateOut': 'fadeOut',
-                    'duration': 4500
-                })
-            )
-        except Exception as e:
-            logging.error(f"Error sending follow overlay alert: {e}")
+        """Legacy video overlay removed — WatsonOS browser overlay handles visuals."""
+        pass
 
     async def trigger_lights(self):
         try:

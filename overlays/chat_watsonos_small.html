@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Chat — Small</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      width: 420px;
+      height: 772px; /* fills below camera (1080 - 280 - 28 taskbar) */
+      overflow: hidden;
+      background: transparent;
+      -webkit-font-smoothing: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .chat-window {
+      width: 100%;
+      height: 100%;
+      background: var(--win-gray);
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 3px;
+      height: 22px;
+      user-select: none;
+      background: linear-gradient(90deg, #7b2d8e, #2ec4b6);
+      flex-shrink: 0;
+    }
+    .chat-titlebar span {
+      color: #fff;
+      font-weight: bold;
+      font-size: 11px;
+      font-family: var(--wf);
+      padding-left: 4px;
+    }
+    .chat-tb-controls {
+      display: flex;
+      gap: 2px;
+    }
+    .chat-tb-controls button {
+      width: 18px;
+      height: 16px;
+      background: var(--win-gray);
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-size: 10px;
+      font-weight: bold;
+      font-family: var(--wf);
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .chat-tb-controls button:active {
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #000,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #808080;
+    }
+
+    /* Chat area — sunken terminal style */
+    .chat-area {
+      flex: 1;
+      margin: 3px;
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #000;
+      background: #000;
+      overflow-y: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 6px 8px;
+      font-family: var(--tf);
+      font-size: 22px;
+      line-height: 1.4;
+    }
+
+    .chat-msg {
+      opacity: 0;
+      animation: msg-in 0.3s ease forwards;
+      margin-bottom: 2px;
+      word-break: break-word;
+    }
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-msg .username {
+      font-weight: bold;
+    }
+    .chat-msg .message {
+      color: #c0c0c0;
+    }
+    .chat-msg .emote {
+      display: inline-block;
+      vertical-align: middle;
+      height: 26px;
+      margin: 0 1px;
+    }
+    .chat-msg .emote img {
+      height: 100%;
+      width: auto;
+    }
+
+    /* Input bar (decorative) */
+    .chat-input-bar {
+      display: flex;
+      gap: 4px;
+      padding: 3px;
+      flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1;
+      height: 22px;
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #000;
+      background: #fff;
+      font-family: var(--wf);
+      font-size: 11px;
+      padding: 2px 4px;
+    }
+    .chat-send-btn {
+      background: var(--win-gray);
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      padding: 2px 12px;
+      font-family: var(--wf);
+      font-size: 11px;
+    }
+
+    /* Status bar */
+    .chat-status {
+      display: flex;
+      gap: 2px;
+      padding: 2px 3px;
+      flex-shrink: 0;
+    }
+    .chat-status span {
+      flex: 1;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-family: var(--wf);
+      box-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080;
+      background: var(--win-gray);
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-window">
+    <div class="chat-titlebar">
+      <span>💬 chat.exe — Twitch Chat</span>
+      <div class="chat-tb-controls">
+        <button>–</button>
+        <button>□</button>
+        <button>×</button>
+      </div>
+    </div>
+    <div class="chat-area" id="chat-area"></div>
+    <div class="chat-input-bar">
+      <div class="chat-input"></div>
+      <button class="chat-send-btn">Send</button>
+    </div>
+    <div class="chat-status">
+      <span id="chat-count">0 messages</span>
+      <span>Connected</span>
+    </div>
+  </div>
+
+  <script src="./assets/js/watsonos.js"></script>
+  <script>
+    const chatArea = document.getElementById('chat-area');
+    const MAX_MESSAGES = 25;
+    let msgCount = 0;
+
+    // Color map for known users (matching website)
+    const userColors = {
+      'watsonmcbot': '#44dddd',
+      'watsonmcrotch': '#44dddd',
+      'itsofuffie': '#ff8c00',
+      'kiov3r': '#ff4444',
+      'buttors': '#ffff54',
+      'dead_kings_crown': '#ffff54',
+      'bezmundo': '#ff69b4',
+      'daverror': '#4488ff',
+    };
+
+    function getColor(username) {
+      const lower = username.toLowerCase();
+      if (userColors[lower]) return userColors[lower];
+      // Generate consistent color from username
+      let hash = 0;
+      for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const hue = Math.abs(hash) % 360;
+      return 'hsl(' + hue + ', 70%, 60%)';
+    }
+
+    function buildMessageContent(fragments) {
+      const span = document.createElement('span');
+      span.className = 'message';
+      if (!fragments || !fragments.length) return span;
+      fragments.forEach(part => {
+        if (part.type === 'text') {
+          span.appendChild(document.createTextNode(part.content));
+        } else if (part.type === 'twitch_emote' || part.type === '7tv_emote') {
+          const emoteEl = document.createElement('span');
+          emoteEl.className = 'emote';
+          const img = document.createElement('img');
+          img.src = part.url;
+          img.alt = part.name || '';
+          img.onerror = function() {
+            emoteEl.replaceWith(document.createTextNode(part.name || ''));
+          };
+          emoteEl.appendChild(img);
+          span.appendChild(emoteEl);
+        }
+      });
+      return span;
+    }
+
+    function addMessage(data) {
+      const displayName = data.displayName || data.username;
+      const fragments = data.fragments;
+      const color = data.userColor || getColor(data.username);
+
+      const msgEl = document.createElement('div');
+      msgEl.className = 'chat-msg';
+
+      const userSpan = document.createElement('span');
+      userSpan.className = 'username';
+      userSpan.style.color = color;
+      userSpan.textContent = displayName + ': ';
+      msgEl.appendChild(userSpan);
+
+      if (fragments && fragments.length) {
+        msgEl.appendChild(buildMessageContent(fragments));
+      } else {
+        const msgSpan = document.createElement('span');
+        msgSpan.className = 'message';
+        msgSpan.textContent = data.message || '';
+        msgEl.appendChild(msgSpan);
+      }
+
+      chatArea.appendChild(msgEl);
+      msgCount++;
+      document.getElementById('chat-count').textContent = msgCount + ' messages';
+
+      while (chatArea.children.length > MAX_MESSAGES) {
+        chatArea.removeChild(chatArea.firstChild);
+      }
+    }
+
+    WatsonOS.connect();
+
+    // Listen for chat messages from bot WebSocket (type is 'chat-message' with hyphen)
+    WatsonOS.on('chat-message', (data) => {
+      if (data && data.username) {
+        addMessage(data);
+      }
+    });
+  </script>
+</body>
+</html>

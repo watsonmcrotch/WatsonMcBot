@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Intro Transition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      -webkit-font-smoothing: none;
+    }
+
+    #black-bg {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 1;
+    }
+
+    /* ── PHASE 1: INTRO CARD REPLICA ── */
+    #intro-replica {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 9500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #intro-replica::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 2px,
+        rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px
+      );
+      pointer-events: none;
+    }
+    .ir-logo {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 40px;
+      transform: scale(3);
+    }
+    .ir-logo div { width: 18px; height: 18px; }
+    .ir-logo div:nth-child(1) { background: #7b2d8e; }
+    .ir-logo div:nth-child(2) { background: #2ec4b6; }
+    .ir-logo div:nth-child(3) { background: #7b2d8e; }
+    .ir-logo div:nth-child(4) { background: #2ec4b6; }
+    .ir-title {
+      font-family: var(--tf);
+      font-size: 48px;
+      color: #fff;
+      letter-spacing: 8px;
+      text-shadow: 0 0 20px rgba(0,128,128,0.5);
+    }
+    .ir-subtitle {
+      font-family: var(--tf);
+      font-size: 18px;
+      color: #555;
+      letter-spacing: 6px;
+      margin-top: 12px;
+    }
+    .ir-glitch {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: rgba(0,255,242,0.15);
+      pointer-events: none;
+      top: 0;
+    }
+
+    /* ── PHASE 2: BIOS BOOT ── */
+    #boot {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 9000;
+      padding: 40px;
+      font-family: var(--tf);
+      font-size: 18px;
+      color: #aaa;
+      overflow: hidden;
+    }
+    #boot-text {
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    #boot-text .y { color: #ffff54; }
+    #boot-text .g { color: #54ff54; }
+    #boot-text .d { color: #555; }
+
+    /* ── PHASE 3: STARTUP ── */
+    #startup {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 8999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wlogo {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 50px;
+      transform: scale(2.2);
+    }
+    .wlogo div {
+      width: 18px;
+      height: 18px;
+      opacity: 0;
+      transform: scale(0) rotate(180deg);
+    }
+    .wlogo div:nth-child(1) { background: #7b2d8e; }
+    .wlogo div:nth-child(2) { background: #2ec4b6; }
+    .wlogo div:nth-child(3) { background: #7b2d8e; }
+    .wlogo div:nth-child(4) { background: #2ec4b6; }
+
+    .stitle {
+      font-family: var(--tf);
+      font-size: 26px;
+      color: #888;
+      letter-spacing: 6px;
+      opacity: 0;
+    }
+
+    .sbar-wrap {
+      width: 240px;
+      height: 20px;
+      background: #000;
+      border: 2px solid #333;
+      padding: 3px;
+      margin-top: 50px;
+      opacity: 0;
+    }
+    .sbar {
+      width: 0;
+      height: 100%;
+      background: #2ec4b6;
+    }
+  </style>
+</head>
+<body>
+  <div id="black-bg"></div>
+
+  <div id="intro-replica">
+    <div class="ir-logo"><div></div><div></div><div></div><div></div></div>
+    <div class="ir-title">WATSONMCROTCH</div>
+    <div class="ir-subtitle">STARTING SOON</div>
+    <div class="ir-glitch"></div>
+  </div>
+
+  <div id="boot">
+    <div id="boot-text"></div>
+  </div>
+
+  <div id="startup">
+    <div class="wlogo" id="wlogo"><div></div><div></div><div></div><div></div></div>
+    <div class="stitle" id="stitle">WatsonOS&nbsp;95</div>
+    <div class="sbar-wrap" id="sbar-wrap"><div class="sbar" id="sbar"></div></div>
+  </div>
+
+  <script>
+    /* ════════════════════════════════════════════════════════════
+       FRAME-DRIVEN INTRO TRANSITION
+       No setTimeout — the capture script calls renderFrame(ms)
+       for each frame, so timing is perfectly deterministic.
+
+       TIMELINE (14 seconds total):
+       ────────────────────────────────────────────────
+        0.0s –  2.0s   Intro card replica holds (2s)
+        2.0s –  3.0s   Crossfade replica → boot (1s)
+        3.0s –  7.0s   BIOS boot text (4s)
+        7.0s –  7.5s   Boot fades to black (0.5s)
+        7.5s – 10.5s   Startup: logo + loading bar (3s)
+       10.5s – 11.0s   Startup fades to black (0.5s)
+       11.0s – 14.0s   Slow fade: black → transparent (3s)
+       ────────────────────────────────────────────────
+    ════════════════════════════════════════════════════════════ */
+
+    var replica = document.getElementById('intro-replica');
+    var boot = document.getElementById('boot');
+    var bootText = document.getElementById('boot-text');
+    var startup = document.getElementById('startup');
+    var blackBg = document.getElementById('black-bg');
+    var glitch = document.querySelector('.ir-glitch');
+    var wlogo = document.getElementById('wlogo');
+    var stitle = document.getElementById('stitle');
+    var sbarWrap = document.getElementById('sbar-wrap');
+    var sbar = document.getElementById('sbar');
+    var logoDivs = wlogo.querySelectorAll('div');
+
+    /* BIOS lines — time offsets relative to boot text start (3000ms).
+       Spans 4 seconds of content (0–3900ms offset). */
+    var BIOS = [
+      { t: 'WatsonMcRotch\u2122 BIOS v4.20.69',           c: 'y', d: 0 },
+      { t: 'Copyright (C) 2024 WatsonMcRotch Industries', c: 'd', d: 200 },
+      { t: '',                                              c: '',  d: 900 },
+      { t: 'CPU: Intel Pentium\u2122 233MHz MMX',          c: '',  d: 600 },
+      { t: 'Memory: 32768K OK',                            c: 'g', d: 1000 },
+      { t: '',                                              c: '',  d: 1200 },
+      { t: 'Detecting drives...',                          c: '',  d: 1500 },
+      { t: '  WatsonMcBot v2.0 [AI Engine]    OK',         c: 'g', d: 1900 },
+      { t: '  Emote Drive 420GB               OK',         c: 'g', d: 2300 },
+      { t: '  Fanta tanks filling...          ',           c: '',  d: 2700 },
+      { t: '  Fanta tanks filling...          ',           c: '',  d: 3000 },
+      { t: '  Fanta tanks filling...          ',           c: '',  d: 3300 },
+      { t: '  Fanta tanks                     FULL',       c: 'g', d: 3500 },
+      { t: '',                                              c: '',  d: 3700 },
+      { t: 'Loading WatsonOS 95...',                       c: 'y', d: 3900 },
+    ];
+
+    var biosRendered = 0;
+
+    function addBiosLine(line) {
+      var div = document.createElement('div');
+      if (line.c) {
+        var span = document.createElement('span');
+        span.className = line.c;
+        span.textContent = line.t;
+        div.appendChild(span);
+      } else {
+        div.textContent = line.t;
+      }
+      bootText.appendChild(div);
+    }
+
+    function fade(t, startMs, endMs, fromVal, toVal) {
+      if (t <= startMs) return fromVal;
+      if (t >= endMs) return toVal;
+      return fromVal + (toVal - fromVal) * ((t - startMs) / (endMs - startMs));
+    }
+
+    window.renderFrame = function(ms) {
+
+      /* Glitch scanline */
+      var glitchCycle = 4000;
+      glitch.style.top = ((ms % glitchCycle) / glitchCycle * 100) + '%';
+
+      /* ─── Phase 1: Intro card holds (0 – 2000ms) ───
+         ─── Crossfade to boot    (2000 – 3000ms) ─── */
+      if (ms < 3000) {
+        replica.style.display = 'flex';
+        replica.style.opacity = fade(ms, 2000, 3000, 1, 0);
+        boot.style.display = 'block';
+        boot.style.opacity = '1';
+        startup.style.display = 'none';
+        blackBg.style.opacity = '1';
+        return;
+      }
+
+      /* ─── Phase 2: Boot sequence (3000 – 7000ms) ───
+         ─── Boot fades out       (7000 – 7500ms) ─── */
+      replica.style.display = 'none';
+
+      if (ms < 7500) {
+        boot.style.display = 'block';
+        boot.style.opacity = fade(ms, 7000, 7500, 1, 0);
+
+        var bootTime = ms - 3000;
+        while (biosRendered < BIOS.length && BIOS[biosRendered].d <= bootTime) {
+          addBiosLine(BIOS[biosRendered]);
+          biosRendered++;
+        }
+
+        startup.style.display = 'none';
+        blackBg.style.opacity = '1';
+        return;
+      }
+
+      /* ─── Phase 3: Startup screen (7500 – 10500ms) ───
+         ─── Startup fades out    (10500 – 11000ms) ─── */
+      boot.style.display = 'none';
+
+      if (ms < 11000) {
+        startup.style.display = 'flex';
+        startup.style.opacity = fade(ms, 10500, 11000, 1, 0);
+
+        /* Time within startup phase */
+        var sTime = ms - 7500;
+
+        /* Logo blocks: staggered 100ms apart, each takes 500ms */
+        for (var i = 0; i < 4; i++) {
+          var blockStart = i * 150;
+          var blockEnd = blockStart + 500;
+          if (sTime < blockStart) {
+            logoDivs[i].style.opacity = '0';
+            logoDivs[i].style.transform = 'scale(0) rotate(180deg)';
+          } else if (sTime < blockEnd) {
+            var p = (sTime - blockStart) / (blockEnd - blockStart);
+            logoDivs[i].style.opacity = p;
+            logoDivs[i].style.transform = 'scale(' + p + ') rotate(' + (180 * (1 - p)) + 'deg)';
+          } else {
+            logoDivs[i].style.opacity = '1';
+            logoDivs[i].style.transform = 'scale(1) rotate(0)';
+          }
+        }
+
+        /* Title: fades in at 600ms */
+        stitle.style.opacity = fade(sTime, 600, 1000, 0, 1);
+
+        /* Bar wrapper: fades in at 800ms */
+        sbarWrap.style.opacity = fade(sTime, 800, 1100, 0, 1);
+
+        /* Bar fills from 1100ms over 1.8s (stepped blocks) */
+        if (sTime >= 1100) {
+          var barProgress = Math.min(1, (sTime - 1100) / 1800);
+          var stepped = Math.floor(barProgress * 18) / 18;
+          sbar.style.width = (stepped * 100) + '%';
+        }
+
+        blackBg.style.opacity = '1';
+        return;
+      }
+
+      /* ─── Phase 4: Slow fade black → transparent (11000 – 14000ms) ─── */
+      startup.style.display = 'none';
+      boot.style.display = 'none';
+      blackBg.style.opacity = fade(ms, 11000, 14000, 1, 0);
+    };
+
+    /* Browser preview — auto-start with requestAnimationFrame */
+    if (!window.__puppeteerCapture) {
+      var startTime = performance.now();
+      function tick() {
+        var elapsed = performance.now() - startTime;
+        window.renderFrame(elapsed);
+        if (elapsed < 14500) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+  </script>
+</body>
+</html>

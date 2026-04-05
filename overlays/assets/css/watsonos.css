@@ -1,0 +1,346 @@
+/* ═══════════════════════════════════════════════════════════
+   WatsonOS 95 — Shared Design System
+   Matches watsonmcrotch.com aesthetic exactly
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --win-bg: #008080;
+  --win-gray: #c0c0c0;
+  --win-dark: #808080;
+  --win-light: #ffffff;
+  --win-lighter: #dfdfdf;
+  --win-title: #7b2d8e;
+  --win-title-inactive: #808080;
+  --win-text: #000000;
+  --win-highlight: #7b2d8e;
+  --win-highlight-text: #ffffff;
+  --tf: 'VT323', 'Courier New', monospace;
+  --wf: 'Tahoma', 'Segoe UI', 'Microsoft Sans Serif', Geneva, sans-serif;
+}
+
+/* ── CRT OVERLAY ─────────────────────── */
+.crt {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: repeating-linear-gradient(
+    0deg, transparent 0px, transparent 1px,
+    rgba(0,0,0,0.06) 1px, rgba(0,0,0,0.06) 2px
+  );
+}
+.crt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.4) 100%);
+}
+
+/* ── WIN95 WINDOW ────────────────────── */
+.w95-window {
+  position: absolute;
+  background: var(--win-gray);
+  box-shadow:
+    inset -1px -1px 0 #000,
+    inset 1px 1px 0 #fff,
+    inset -2px -2px 0 #808080,
+    inset 2px 2px 0 #dfdfdf;
+  font-family: var(--wf);
+  font-size: 11px;
+  color: var(--win-text);
+}
+
+/* Title bar */
+.w95-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 3px;
+  height: 22px;
+  cursor: default;
+  user-select: none;
+  background: linear-gradient(90deg, #7b2d8e, #2ec4b6);
+}
+.w95-titlebar.inactive {
+  background: linear-gradient(90deg, #808080, #b0b0b0);
+}
+.w95-title-text {
+  color: #fff;
+  font-weight: bold;
+  font-size: 11px;
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.w95-title-controls {
+  display: flex;
+  gap: 2px;
+}
+.w95-title-btn {
+  width: 18px;
+  height: 16px;
+  background: var(--win-gray);
+  border: none;
+  box-shadow:
+    inset -1px -1px 0 #000,
+    inset 1px 1px 0 #fff,
+    inset -2px -2px 0 #808080,
+    inset 2px 2px 0 #dfdfdf;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: var(--wf);
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.w95-title-btn:active {
+  box-shadow:
+    inset -1px -1px 0 #fff,
+    inset 1px 1px 0 #000,
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 #808080;
+}
+
+/* Window body */
+.w95-body {
+  padding: 8px;
+}
+
+/* Sunken panel */
+.w95-sunken {
+  box-shadow:
+    inset -1px -1px 0 #fff,
+    inset 1px 1px 0 #808080,
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 #000;
+  background: #fff;
+  padding: 8px;
+}
+
+/* Raised button */
+.w95-btn {
+  background: var(--win-gray);
+  border: none;
+  box-shadow:
+    inset -1px -1px 0 #000,
+    inset 1px 1px 0 #fff,
+    inset -2px -2px 0 #808080,
+    inset 2px 2px 0 #dfdfdf;
+  padding: 4px 20px;
+  font-family: var(--wf);
+  font-size: 11px;
+  cursor: pointer;
+  min-width: 75px;
+}
+.w95-btn:active {
+  box-shadow:
+    inset -1px -1px 0 #fff,
+    inset 1px 1px 0 #000,
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 #808080;
+  padding: 5px 19px 3px 21px;
+}
+.w95-btn.default {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
+}
+
+/* Status bar */
+.w95-statusbar {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+}
+.w95-statusbar span {
+  flex: 1;
+  padding: 2px 6px;
+  font-size: 10px;
+  box-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080;
+  background: var(--win-gray);
+}
+
+/* Progress bar */
+.w95-progress {
+  box-shadow:
+    inset -1px -1px 0 #fff,
+    inset 1px 1px 0 #808080,
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 #000;
+  background: var(--win-gray);
+  padding: 2px;
+  height: 20px;
+}
+.w95-progress-fill {
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    #7b2d8e 0px, #2ec4b6 10px,
+    transparent 10px, transparent 14px
+  );
+  transition: width 0.3s linear;
+}
+
+/* Menu bar */
+.w95-menubar {
+  display: flex;
+  background: var(--win-gray);
+  padding: 1px 0;
+  border-bottom: 1px solid #808080;
+  box-shadow: 0 1px 0 #fff;
+  user-select: none;
+}
+.w95-menubar-item {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: var(--wf);
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--win-text);
+}
+.w95-menubar-item:hover {
+  box-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 16px; height: 16px; }
+::-webkit-scrollbar-track {
+  background: repeating-linear-gradient(
+    135deg, var(--win-gray) 0px, var(--win-gray) 2px,
+    #fff 2px, #fff 4px
+  );
+}
+::-webkit-scrollbar-thumb {
+  background: var(--win-gray);
+  box-shadow:
+    inset -1px -1px 0 #000,
+    inset 1px 1px 0 #fff,
+    inset -2px -2px 0 #808080,
+    inset 2px 2px 0 #dfdfdf;
+}
+
+/* ── ANIMATED CURSOR ─────────────────── */
+.w95-cursor {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  z-index: 9999;
+  pointer-events: none;
+  transition: left 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+              top 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.w95-cursor svg {
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.3));
+}
+
+/* ── ANIMATIONS ──────────────────────── */
+@keyframes w95-open {
+  0% { transform: scale(0.15); opacity: 0; filter: blur(3px); }
+  70% { transform: scale(1.03); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0); }
+}
+@keyframes w95-close {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.15); opacity: 0; }
+}
+@keyframes w95-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+@keyframes w95-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes w95-flicker {
+  0%,100% { opacity:1 } 93% { opacity:1 } 93.5% { opacity:.82 } 94% { opacity:1 }
+}
+@keyframes w95-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes w95-slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes w95-glitch {
+  0%,92%,100% { transform: none; }
+  93% { transform: translate(-2px, 1px); }
+  94% { transform: translate(1px, -1px); }
+  95% { transform: none; }
+}
+
+/* ── BSOD ────────────────────────────── */
+.w95-bsod {
+  position: fixed;
+  inset: 0;
+  background: #000080;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  font-family: var(--tf);
+  color: #fff;
+  text-align: center;
+}
+.w95-bsod-header {
+  background: #c0c0c0;
+  color: #000080;
+  padding: 2px 12px;
+  font-size: 22px;
+  margin-bottom: 30px;
+}
+.w95-bsod-text {
+  font-size: 20px;
+  line-height: 1.6;
+  max-width: 600px;
+}
+.w95-bsod-footer {
+  margin-top: 30px;
+  font-size: 18px;
+  animation: w95-blink 1s step-end infinite;
+}
+
+/* ── ERROR DIALOG ────────────────────── */
+.w95-error {
+  position: absolute;
+  background: var(--win-gray);
+  box-shadow:
+    inset -1px -1px 0 #000,
+    inset 1px 1px 0 #fff,
+    inset -2px -2px 0 #808080,
+    inset 2px 2px 0 #dfdfdf;
+  z-index: 1000;
+}
+.w95-error .w95-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+}
+.w95-error-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+}
+.w95-error-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}

@@ -70,6 +70,18 @@ class OBSClient:
             else:
                 logging.info(f"No reaction found for this transition")
 
+            # Trigger intro boot sequence when leaving an Intro scene
+            if previous_scene and 'intro' in previous_scene.lower():
+                if hasattr(self.bot, 'overlay_manager'):
+                    try:
+                        asyncio.run_coroutine_threadsafe(
+                            self.bot.overlay_manager.trigger_intro_transition(),
+                            self.bot.loop
+                        )
+                        logging.info("Triggered intro boot sequence on alerts overlay")
+                    except Exception as ie:
+                        logging.error(f"Error triggering intro transition: {ie}")
+
             # Sync WatsonOS taskbar overlay with current scene
             if hasattr(self.bot, 'overlay_manager'):
                 try:

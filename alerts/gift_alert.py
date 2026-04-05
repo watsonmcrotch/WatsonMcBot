@@ -51,51 +51,9 @@ class GiftSubAlert:
                 rc_context = await asyncio.to_thread(self.bot.db_manager.get_user_context, recipient_username)
                 recipient_display = rc_context.get('nickname', recipient_username)
 
-            video_path = self.mass_gift_video if total_subs > 5 else self.single_gift_video
-
             # Trigger WatsonOS browser overlay giftsub alert
             if hasattr(self.bot, 'overlay_manager'):
                 asyncio.create_task(self.bot.overlay_manager.trigger_giftsub_alert(gifter_display, total_subs))
-
-            await self.send_companion_event('custom_video', {
-                'video_path': video_path,
-                'type': 'gift_sub_alert',
-                'duration': 7000,
-                'width': '1920px',
-                'height': '1080px',
-                'position': {
-                    'top': '0',
-                    'left': '0'
-                }
-            })
-
-            if total_subs == 1 and recipient_display:
-                overlay_text = f"{gifter_display} just gifted a sub to {recipient_display}!"
-            elif total_subs == 1:
-                overlay_text = f"{gifter_display} just gifted a sub!"
-            else:
-                overlay_text = f"{gifter_display} just gifted {total_subs} subs!"
-
-            await asyncio.sleep(2)
-                
-            await self.send_companion_event('text-overlay', {
-                'content': overlay_text,
-                'position': {},
-                'style': {
-                    'fontFamily': 'Montserrat ExtraBold',
-                    'fontSize': '70px',
-                    'color': 'white',
-                    'textShadow': '4px 4px 6px rgba(0, 0, 0, 0.5)',
-                    'position': 'absolute',
-                    'textAlign': 'center',
-                    'width': '100%',
-                    'top': '50%',
-                    'left': '0%',
-                },
-                'animateIn': 'bounceIn',
-                'animateOut': 'bounceOut',
-                'duration': 4000
-            })
 
             await self.set_light_color(self.white_rgb)
             await asyncio.sleep(0.5)

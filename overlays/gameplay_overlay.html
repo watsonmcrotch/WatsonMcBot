@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Gameplay</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: transparent;
+      -webkit-font-smoothing: none;
+    }
+
+    /* Gameplay area — 1500 wide, viewport interior is 1494x840 (16:9) */
+    .gameplay-frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1500px;
+      height: 888px;
+      background: var(--win-gray);
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+    }
+
+    .gp-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 3px;
+      height: 22px;
+      user-select: none;
+      background: linear-gradient(90deg, #7b2d8e, #2ec4b6);
+    }
+    .gp-titlebar span {
+      color: #fff;
+      font-weight: bold;
+      font-size: 11px;
+      font-family: var(--wf);
+      padding-left: 4px;
+    }
+    .gp-controls {
+      display: flex;
+      gap: 2px;
+    }
+    .gp-controls button {
+      width: 18px;
+      height: 16px;
+      background: var(--win-gray);
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-size: 10px;
+      font-weight: bold;
+      font-family: var(--wf);
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .gp-controls button:active {
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #000,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #808080;
+    }
+
+    /* Gameplay viewport — transparent so game capture shows through */
+    .gp-viewport {
+      margin: 3px;
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #000;
+      background: transparent;
+      height: calc(100% - 22px - 6px - 20px);
+    }
+
+    /* Status bar */
+    .gp-status {
+      display: flex;
+      gap: 2px;
+      padding: 2px 3px;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+    .gp-status span {
+      flex: 1;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-family: var(--wf);
+      box-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080;
+      background: var(--win-gray);
+    }
+  </style>
+</head>
+<body>
+  <div class="gameplay-frame">
+    <div class="gp-titlebar">
+      <span>🎮 gameplay.exe</span>
+      <div class="gp-controls">
+        <button>–</button>
+        <button>□</button>
+        <button>×</button>
+      </div>
+    </div>
+    <div class="gp-viewport"></div>
+    <div class="gp-status">
+      <span>Ready</span>
+      <span id="gp-fps">FPS: --</span>
+    </div>
+  </div>
+
+</body>
+</html>

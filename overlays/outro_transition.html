@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Outro</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: var(--win-bg);
+      -webkit-font-smoothing: none;
+    }
+
+    /* Desktop matching main scene for seamless transition */
+    .desktop {
+      position: fixed;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent 0px, transparent 3px,
+          rgba(0,0,0,0.02) 3px, rgba(0,0,0,0.02) 4px
+        );
+    }
+
+    /* Taskbar matching main scene exactly */
+    .taskbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 28px;
+      background: var(--win-gray);
+      box-shadow:
+        inset 0 1px 0 #fff,
+        inset 0 -1px 0 #000;
+      display: flex;
+      align-items: center;
+      padding: 2px 4px;
+      gap: 4px;
+      z-index: 10;
+      font-family: var(--wf);
+      font-size: 11px;
+    }
+
+    .start-btn {
+      height: 22px;
+      padding: 2px 8px;
+      background: var(--win-gray);
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-family: var(--wf);
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: default;
+    }
+
+    .start-logo {
+      width: 16px;
+      height: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+    }
+    .start-logo div:nth-child(1) { background: #7b2d8e; }
+    .start-logo div:nth-child(2) { background: #2ec4b6; }
+    .start-logo div:nth-child(3) { background: #7b2d8e; }
+    .start-logo div:nth-child(4) { background: #2ec4b6; }
+
+    .taskbar-divider {
+      width: 2px;
+      height: 20px;
+      box-shadow: -1px 0 0 #808080, 1px 0 0 #fff;
+      margin: 0 2px;
+    }
+
+    .taskbar-task {
+      height: 22px;
+      padding: 2px 10px;
+      background: var(--win-gray);
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-family: var(--wf);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+      transition: opacity 0.3s, max-width 0.4s ease, padding 0.4s ease;
+    }
+    .taskbar-task.closing {
+      opacity: 0;
+      max-width: 0;
+      padding: 2px 0;
+      overflow: hidden;
+    }
+
+    .taskbar-tray {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 8px;
+      height: 22px;
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080;
+      font-size: 10px;
+      color: var(--win-text);
+    }
+
+    /* ── SHUTDOWN DIALOG ─────────────────── */
+    #shutdown-dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 380px;
+      background: var(--win-gray);
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      z-index: 100;
+      display: none;
+    }
+
+    .sd-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 3px;
+      height: 22px;
+      background: linear-gradient(90deg, #7b2d8e, #2ec4b6);
+    }
+    .sd-titlebar span {
+      color: #fff;
+      font-weight: bold;
+      font-size: 11px;
+      font-family: var(--wf);
+      padding-left: 4px;
+    }
+
+    .sd-body {
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .sd-icon { font-size: 36px; flex-shrink: 0; }
+    .sd-text {
+      font-family: var(--wf);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .sd-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      padding: 0 24px 16px;
+    }
+
+    /* ── SCREEN GLITCH ───────────────────── */
+    @keyframes screen-glitch {
+      0%   { clip-path: inset(0); filter: none; }
+      5%   { clip-path: inset(20% 0 30% 0); filter: hue-rotate(90deg) saturate(3); }
+      10%  { clip-path: inset(60% 0 5% 0); filter: hue-rotate(-45deg); transform: translateX(-5px); }
+      15%  { clip-path: inset(10% 0 70% 0); filter: saturate(5) brightness(1.5); transform: translateX(3px); }
+      20%  { clip-path: inset(40% 0 20% 0); filter: hue-rotate(180deg); transform: translateX(-2px); }
+      25%  { clip-path: inset(0); filter: none; transform: none; }
+      100% { clip-path: inset(0); filter: none; }
+    }
+
+    /* ── SHUTDOWN PROGRESS ────────────────── */
+    #shutdown-progress {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--tf);
+      opacity: 0;
+    }
+    .shutdown-logo {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 30px;
+      transform: scale(1.8);
+      animation: logo-pulse 2s ease-in-out infinite;
+    }
+    @keyframes logo-pulse {
+      0%, 100% { opacity: 1; filter: brightness(1); }
+      50% { opacity: 0.6; filter: brightness(0.5); }
+    }
+    .shutdown-logo div { width: 18px; height: 18px; }
+    .shutdown-logo div:nth-child(1) { background: #7b2d8e; }
+    .shutdown-logo div:nth-child(2) { background: #2ec4b6; }
+    .shutdown-logo div:nth-child(3) { background: #7b2d8e; }
+    .shutdown-logo div:nth-child(4) { background: #2ec4b6; }
+
+    .shutdown-text {
+      font-size: 22px;
+      color: #888;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+    }
+    .shutdown-sub {
+      font-size: 16px;
+      color: #555;
+      min-height: 24px;
+    }
+
+    /* ── CRT OFF EFFECT ──────────────────── */
+    #crt-off {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 250;
+      display: none;
+    }
+    .crt-off-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #fff;
+      box-shadow: 0 0 20px #fff, 0 0 40px rgba(255,255,255,0.5);
+      transform: translateY(-50%);
+    }
+
+    /* ── FINAL BLACK ─────────────────────── */
+    #final-black {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 300;
+    }
+    .power-off-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--tf);
+      font-size: 24px;
+      color: #2ec4b6;
+      text-shadow: 0 0 10px rgba(46,196,182,0.4);
+      text-align: center;
+      line-height: 1.5;
+      opacity: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Desktop (matches main scene for seamless OBS transition) -->
+  <div class="desktop"></div>
+  <div class="taskbar">
+    <button class="start-btn">
+      <div class="start-logo"><div></div><div></div><div></div><div></div></div>
+      Start
+    </button>
+    <div class="taskbar-divider"></div>
+    <div class="taskbar-task" id="task-game">🎮 gameplay.exe</div>
+    <div class="taskbar-task" id="task-cam">📹 camera.exe</div>
+    <div class="taskbar-task" id="task-chat">💬 chat.exe</div>
+    <div class="taskbar-task" id="task-stats">📊 stats.exe</div>
+    <div class="taskbar-task" id="task-spotify">🎵 media_player.exe</div>
+    <div class="taskbar-tray">
+      <span id="tray-clock"></span>
+    </div>
+  </div>
+
+  <!-- Shutdown Dialog -->
+  <div id="shutdown-dialog">
+    <div class="sd-titlebar">
+      <span>Shut Down WatsonOS</span>
+    </div>
+    <div class="sd-body">
+      <div class="sd-icon">💻</div>
+      <div class="sd-text">
+        Are you sure you want to shut down WatsonOS?<br>
+        <span style="color:#808080;font-size:11px;">All unsaved memes will be lost.</span>
+      </div>
+    </div>
+    <div class="sd-btns">
+      <button class="w95-btn default" id="btn-shutdown">OK</button>
+      <button class="w95-btn" id="btn-cancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Shutdown Progress -->
+  <div id="shutdown-progress">
+    <div class="shutdown-logo"><div></div><div></div><div></div><div></div></div>
+    <div class="shutdown-text">WatsonOS 95</div>
+    <div class="shutdown-sub" id="shutdown-msg">Saving your settings...</div>
+  </div>
+
+  <!-- CRT Off Effect -->
+  <div id="crt-off">
+    <div class="crt-off-line" id="crt-line"></div>
+  </div>
+
+  <!-- Final Black Screen -->
+  <div id="final-black">
+    <div class="power-off-text" id="power-text">
+      It is now safe to turn off<br>your computer.
+    </div>
+  </div>
+
+
+  <script src="./assets/js/watsonos.js"></script>
+  <script>
+    // Set clock to match main scene
+    (function() {
+      const now = new Date();
+      document.getElementById('tray-clock').textContent =
+        now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    })();
+
+    const cursor = WatsonOS.createCursor();
+    cursor.style.display = 'none';
+    document.body.appendChild(cursor);
+
+    setTimeout(startShutdown, 800);
+
+    async function startShutdown() {
+      // Phase 1: Close taskbar items one by one
+      const tasks = ['task-stats', 'task-spotify', 'task-chat', 'task-cam', 'task-game'];
+      for (const id of tasks) {
+        await WatsonOS.delay(500);
+        document.getElementById(id).classList.add('closing');
+      }
+
+      await WatsonOS.delay(600);
+
+      // Phase 2: Show shutdown dialog
+      const dialog = document.getElementById('shutdown-dialog');
+      dialog.style.display = 'block';
+      dialog.style.animation = 'w95-open 0.3s cubic-bezier(.175,.885,.32,1.275) forwards';
+
+      // Phase 3: Cursor enters and clicks OK
+      await WatsonOS.delay(600);
+      cursor.style.display = 'block';
+      cursor.style.transition = 'none';
+      cursor.style.left = '700px';
+      cursor.style.top = '700px';
+
+      await WatsonOS.delay(400);
+      const okBtn = document.getElementById('btn-shutdown');
+      const rect = okBtn.getBoundingClientRect();
+
+      WatsonOS.moveCursorNatural(cursor, rect.left + rect.width / 2 - 5, rect.top + rect.height / 2 - 2, 600, async () => {
+        WatsonOS.clickButton(okBtn);
+        await WatsonOS.delay(300);
+        cursor.style.display = 'none';
+
+        // Phase 4: Close dialog
+        dialog.style.animation = 'w95-close 0.18s ease forwards';
+        await WatsonOS.delay(200);
+        dialog.style.display = 'none';
+
+        // Phase 5: Glitch the screen
+        document.body.style.animation = 'screen-glitch 0.6s ease';
+        await WatsonOS.delay(600);
+        document.body.style.animation = '';
+
+        // Phase 6: Fade to shutdown progress
+        const progress = document.getElementById('shutdown-progress');
+        progress.style.display = 'flex';
+        requestAnimationFrame(() => {
+          progress.style.transition = 'opacity 0.6s';
+          progress.style.opacity = '1';
+        });
+
+        WatsonOS.playSound('./assets/sounds/outro.mp3');
+
+        // Cycle shutdown messages
+        const msgs = [
+          'Saving your settings...',
+          'Closing all windows...',
+          'Disconnecting chat...',
+          'Defragmenting memes...',
+          'Shutting down WatsonMcBot...',
+          'Draining Fanta tanks...',
+          'WatsonOS is shutting down...',
+        ];
+
+        const msgEl = document.getElementById('shutdown-msg');
+        for (const msg of msgs) {
+          await WatsonOS.delay(800);
+          msgEl.textContent = msg;
+        }
+
+        await WatsonOS.delay(1000);
+
+        // Phase 7: CRT turn-off effect
+        progress.style.transition = 'opacity 0.3s';
+        progress.style.opacity = '0';
+        await WatsonOS.delay(400);
+        progress.style.display = 'none';
+
+        const crtOff = document.getElementById('crt-off');
+        crtOff.style.display = 'block';
+
+        // Brief bright line, then shrink to dot
+        await WatsonOS.delay(150);
+        const line = document.getElementById('crt-line');
+        line.style.transition = 'transform 0.8s ease-in, opacity 1s ease-in, box-shadow 0.8s ease-in';
+        line.style.transform = 'translateY(-50%) scaleY(0.2) scaleX(0.005)';
+        line.style.boxShadow = '0 0 5px #fff';
+
+        await WatsonOS.delay(1000);
+        line.style.opacity = '0';
+
+        await WatsonOS.delay(300);
+        line.style.display = 'none';
+
+        // Phase 8: "Safe to turn off" in teal
+        await WatsonOS.delay(600);
+        const finalBlack = document.getElementById('final-black');
+        finalBlack.style.display = 'block';
+        crtOff.style.display = 'none';
+
+        const powerText = document.getElementById('power-text');
+        requestAnimationFrame(() => {
+          powerText.style.transition = 'opacity 0.8s ease';
+          powerText.style.opacity = '1';
+        });
+      });
+    }
+  </script>
+</body>
+</html>

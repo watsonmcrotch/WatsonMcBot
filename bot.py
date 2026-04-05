@@ -60,6 +60,7 @@ from redeems.watsontts_redeem import WatsonHandler
 from services.chat_manager import ChatHandler
 from services.database_manager import DatabaseManager
 from services.obs_client import OBSClient
+from services.overlay_manager import OverlayManager
 
 from services.spotify_widget_handler import SpotifyWidgetHandler
 from services.state_manager import bot_state
@@ -661,6 +662,7 @@ class WatsonMcBot(commands.Bot):
             port=4455,
             password=OBS_PASSWORD)
 
+        self.overlay_manager = OverlayManager(bot=self)
 
         self.db_manager = DatabaseManager(streamer_name=CHANNEL_NAME)
         self.spotify_manager = SpotifyManager(
@@ -1326,6 +1328,13 @@ class WatsonMcBot(commands.Bot):
                     logging.info(f"Loaded cog: {cog_module}")
                 except Exception as e:
                     logging.error(f"Failed to load cog {cog_module}: {e}")
+
+            # Connect to OBS WebSocket for scene change detection
+            try:
+                self.obs_client.connect()
+                logging.info("OBS WebSocket connected")
+            except Exception as e:
+                logging.warning(f"Could not connect to OBS WebSocket: {e}")
 
             logging.info("Bot is fully online and ready!")
 

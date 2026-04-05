@@ -45,11 +45,21 @@ def run_async(coro, timeout=30):
     return future.result(timeout=timeout)
 
 STREAM_OVERLAY_DIR = os.getenv('STREAM_OVERLAY_DIR', r'C:\2026 Stream\Website\stream')
+OVERLAYS_DIR = str(BASE_DIR / 'overlays')
 
 @app.route('/stream/<path:filename>')
 def serve_stream_overlay(filename):
     """Serve WatsonOS stream overlay HTML files for OBS browser sources."""
     return send_from_directory(STREAM_OVERLAY_DIR, filename)
+
+@app.route('/favicon.ico')
+def favicon():
+    return Response(status=204)
+
+@app.route('/<path:filename>')
+def serve_overlay_file(filename):
+    """Serve overlay HTML files and assets (CSS/JS/sounds) from the overlays directory."""
+    return send_from_directory(OVERLAYS_DIR, filename)
 
 @app.route('/')
 def dashboard():

@@ -40,39 +40,6 @@ class SubscriptionAlert:
                 asyncio.create_task(self.bot.overlay_manager.trigger_sub_alert(
                     username, tier, is_resub, cumulative_months))
 
-            await self.send_companion_event('custom_video', {
-                'video_path': self.video_path,
-                'type': 'sub_alert',
-                'duration': 6000,
-                'width': '1920px',
-                'height': '1080px',
-                'position': {
-                    'top': '0',
-                    'left': '0'
-                }
-            })
-
-            await asyncio.sleep(1)
-
-            await self.send_companion_event('text-overlay', {
-                'content': f'{display_name} just {sub_type}',
-                'position': {},
-                'style': {
-                    'fontFamily': 'Montserrat ExtraBold',
-                    'fontSize': '84px',
-                    'color': 'white',
-                    'textShadow': '4px 4px 6px rgba(0, 0, 0, 0.5)',
-                    'position': 'absolute',
-                    'textAlign': 'center',
-                    'width': '100%',
-                    'top': '50%',
-                    'left': '0%',
-                },
-                'animateIn': 'bounceIn',
-                'animateOut': 'bounceOut',
-                'duration': 4000
-            })
-
             sub_info = {
                 'display_name': display_name,
                 'is_resub': is_resub,

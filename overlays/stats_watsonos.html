@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Stream Stats</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      overflow: hidden;
+      background: transparent;
+      -webkit-font-smoothing: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .stats-window {
+      width: 520px;
+      height: 163px;
+      background: var(--win-gray);
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-family: var(--wf);
+      font-size: 12px;
+      color: var(--win-text);
+      display: block;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Title bar ── */
+    .stats-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 3px;
+      height: 22px;
+      user-select: none;
+      background: linear-gradient(90deg, #7b2d8e, #2ec4b6);
+    }
+    .stats-title-text {
+      color: #fff;
+      font-weight: bold;
+      font-size: 11px;
+      padding-left: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .stats-controls-top {
+      display: flex;
+      gap: 2px;
+    }
+    .stats-controls-top button {
+      width: 18px;
+      height: 16px;
+      background: var(--win-gray);
+      border: none;
+      box-shadow:
+        inset -1px -1px 0 #000,
+        inset 1px 1px 0 #fff,
+        inset -2px -2px 0 #808080,
+        inset 2px 2px 0 #dfdfdf;
+      font-size: 10px;
+      font-weight: bold;
+      font-family: var(--wf);
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .stats-controls-top button:active {
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #000,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #808080;
+    }
+
+    /* ── Content area ── */
+    .stats-content {
+      overflow: hidden;
+      height: calc(100% - 22px);
+      margin: 0 2px 2px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 10px;
+    }
+
+    /* ── Stat rows ── */
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080;
+      margin-bottom: -1px;
+    }
+    .stat-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .stat-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      width: 20px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #808080;
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    .stat-value {
+      font-size: 14px;
+      font-weight: bold;
+      color: #000;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stat-value.empty {
+      color: #808080;
+      font-weight: normal;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="stats-window">
+    <div class="stats-titlebar">
+      <span class="stats-title-text">📊 stats.exe</span>
+      <div class="stats-controls-top">
+        <button>&ndash;</button>
+        <button>&square;</button>
+        <button>&times;</button>
+      </div>
+    </div>
+
+    <div class="stats-content">
+      <div class="stat-row">
+        <span class="stat-icon">👤</span>
+        <span class="stat-label">Last Follow</span>
+        <span class="stat-value empty" id="stat-follower">Waiting...</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-icon">💎</span>
+        <span class="stat-label">Last Cheer</span>
+        <span class="stat-value empty" id="stat-cheer">Waiting...</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-icon">⭐</span>
+        <span class="stat-label">Last Sub</span>
+        <span class="stat-value empty" id="stat-sub">Waiting...</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="./assets/js/watsonos.js"></script>
+  <script>
+    var STORAGE_KEY = 'watsonos_stats';
+
+    function loadStats() {
+      try {
+        var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        if (saved.follower) setStat('stat-follower', saved.follower);
+        if (saved.cheer) setStat('stat-cheer', saved.cheer);
+        if (saved.sub) setStat('stat-sub', saved.sub);
+      } catch (e) {}
+    }
+
+    function saveStats() {
+      var stats = {};
+      var f = document.getElementById('stat-follower');
+      var c = document.getElementById('stat-cheer');
+      var s = document.getElementById('stat-sub');
+      if (!f.classList.contains('empty')) stats.follower = f.textContent;
+      if (!c.classList.contains('empty')) stats.cheer = c.textContent;
+      if (!s.classList.contains('empty')) stats.sub = s.textContent;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+    }
+
+    function setStat(id, text) {
+      var el = document.getElementById(id);
+      el.textContent = text;
+      el.classList.remove('empty');
+    }
+
+    // Listen for events
+    WatsonOS.on('watsonos_follow', function(data) {
+      setStat('stat-follower', data.user || data.username || 'Unknown');
+      saveStats();
+    });
+
+    WatsonOS.on('watsonos_bits', function(data) {
+      var user = data.user || data.username || 'Unknown';
+      var bits = data.bits || data.amount || 0;
+      setStat('stat-cheer', user + ' — ' + bits + ' bits');
+      saveStats();
+    });
+
+    WatsonOS.on('watsonos_sub', function(data) {
+      var user = data.user || data.username || 'Unknown';
+      var tier = data.tier ? ' (T' + data.tier + ')' : '';
+      setStat('stat-sub', user + tier);
+      saveStats();
+    });
+
+    loadStats();
+  </script>
+</body>
+</html>

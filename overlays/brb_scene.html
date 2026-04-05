@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS BRB</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #000;
+      -webkit-font-smoothing: none;
+      cursor: none;
+    }
+
+    /* Bouncing logo — matches website screensaver exactly */
+    .ss-logo {
+      position: absolute;
+      font-family: var(--tf);
+      font-size: 39px;
+      font-weight: bold;
+      padding: 10px 18px;
+      white-space: nowrap;
+      text-shadow: 0 0 10px currentColor;
+      user-select: none;
+    }
+
+    .brb-notice {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--tf);
+      font-size: 80px;
+      color: #222;
+      letter-spacing: 20px;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="brb-notice">BRB</div>
+
+  <script>
+    /* Bouncing logo screensaver — exact recreation from watsonmcrotch.com */
+
+    const COLORS = ['#ff0000','#00ff00','#4444ff','#ffff00','#ff00ff','#00ffff','#ff8800','#ff44aa'];
+
+    function randomColor() {
+      return COLORS[Math.floor(Math.random() * COLORS.length)];
+    }
+
+    const logo = document.createElement('div');
+    logo.className = 'ss-logo';
+    logo.textContent = 'WatsonOS';
+    logo.style.color = randomColor();
+    document.body.appendChild(logo);
+
+    let x = 100, y = 100, dx = 3.84, dy = 2.88;
+
+    function frame() {
+      x += dx;
+      y += dy;
+
+      const mw = window.innerWidth - logo.offsetWidth;
+      const mh = window.innerHeight - logo.offsetHeight;
+
+      if (x <= 0 || x >= mw) {
+        dx = -dx;
+        logo.style.color = randomColor();
+      }
+      if (y <= 0 || y >= mh) {
+        dy = -dy;
+        logo.style.color = randomColor();
+      }
+
+      x = Math.max(0, Math.min(x, mw));
+      y = Math.max(0, Math.min(y, mh));
+
+      logo.style.left = x + 'px';
+      logo.style.top = y + 'px';
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

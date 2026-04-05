@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatsonOS Intro Card</title>
+  <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <style>
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #000;
+      -webkit-font-smoothing: none;
+    }
+
+    .card-container {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: w95-flicker 6s linear infinite;
+    }
+
+    /* Scanline overlay */
+    .card-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 2px,
+        rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px
+      );
+      pointer-events: none;
+    }
+
+    /* Logo blocks */
+    .logo-blocks {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 40px;
+      transform: scale(3);
+    }
+    .logo-blocks div {
+      width: 18px;
+      height: 18px;
+      opacity: 0;
+    }
+    .logo-blocks div:nth-child(1) { background: #7b2d8e; animation: block-in 0.6s ease 0.3s forwards; }
+    .logo-blocks div:nth-child(2) { background: #2ec4b6; animation: block-in 0.6s ease 0.5s forwards; }
+    .logo-blocks div:nth-child(3) { background: #7b2d8e; animation: block-in 0.6s ease 0.7s forwards; }
+    .logo-blocks div:nth-child(4) { background: #2ec4b6; animation: block-in 0.6s ease 0.9s forwards; }
+
+    @keyframes block-in {
+      0% { opacity: 0; transform: scale(0) rotate(180deg); }
+      60% { opacity: 1; transform: scale(1.1) rotate(-5deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0); }
+    }
+
+    .title-text {
+      font-family: var(--tf);
+      font-size: 48px;
+      color: #fff;
+      letter-spacing: 8px;
+      opacity: 0;
+      animation: w95-fadeIn 0.5s ease 1.2s forwards;
+      text-shadow: 0 0 20px rgba(0,128,128,0.5);
+    }
+
+    .subtitle-text {
+      font-family: var(--tf);
+      font-size: 18px;
+      color: #555;
+      letter-spacing: 6px;
+      margin-top: 12px;
+      opacity: 0;
+      animation: w95-fadeIn 0.5s ease 1.6s forwards;
+    }
+
+    .glitch-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: rgba(0,255,242,0.15);
+      animation: glitch-scan 4s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes glitch-scan {
+      0% { top: -2px; }
+      100% { top: 100%; }
+    }
+
+    /* ── CLI Chat ── */
+    .cli-chat {
+      position: fixed;
+      bottom: 80px;
+      left: 40px;
+      width: 800px;
+      height: 340px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      opacity: 0;
+      animation: w95-fadeIn 0.5s ease 2s forwards;
+      z-index: 5;
+    }
+    .cli-chat-line {
+      font-family: var(--tf);
+      font-size: 22px;
+      line-height: 1.5;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0;
+      animation: cli-line-in 0.3s ease forwards;
+    }
+    .cli-prompt { color: #2ec4b6; }
+    .cli-user { font-weight: bold; }
+    .cli-msg { color: #888; }
+    .cli-sep { color: #444; }
+    @keyframes cli-line-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Spotify Now Playing ── */
+    .cli-spotify {
+      position: fixed;
+      bottom: 40px;
+      right: 40px;
+      font-family: var(--tf);
+      font-size: 22px;
+      color: #555;
+      text-align: right;
+      opacity: 0;
+      animation: w95-fadeIn 0.5s ease 2s forwards;
+      z-index: 5;
+      max-width: 700px;
+    }
+    .np-label { color: #7b2d8e; }
+    .np-track { color: #2ec4b6; }
+    .np-artist { color: #666; }
+    .np-bar { color: #333; }
+    .np-spinner { color: #2ec4b6; }
+
+  </style>
+</head>
+<body>
+  <div class="card-container">
+    <div class="logo-blocks"><div></div><div></div><div></div><div></div></div>
+    <div class="title-text">WATSONMCROTCH</div>
+    <div class="subtitle-text">STARTING SOON</div>
+    <div class="glitch-line"></div>
+  </div>
+
+  <div class="cli-chat" id="cli-chat"></div>
+  <div class="cli-spotify" id="cli-spotify">
+    <span class="np-spinner" id="np-spinner">–</span>
+    <span class="np-label"> now_playing</span>
+    <span class="np-bar"> | </span>
+    <span class="np-track" id="np-track"></span>
+    <span class="np-bar"> — </span>
+    <span class="np-artist" id="np-artist"></span>
+  </div>
+
+  <script src="./assets/js/watsonos.js"></script>
+  <script>
+    /* ── CLI Chat ── */
+    var cliChat = document.getElementById('cli-chat');
+    var MAX_LINES = 10;
+
+    function getCliColor(username) {
+      var hash = 0;
+      for (var i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return 'hsl(' + (Math.abs(hash) % 360) + ', 60%, 55%)';
+    }
+
+    function addChatLine(data) {
+      var name = data.displayName || data.username;
+      var msg = data.message || '';
+      var color = data.userColor || getCliColor(data.username);
+
+      var line = document.createElement('div');
+      line.className = 'cli-chat-line';
+
+      var prompt = document.createElement('span');
+      prompt.className = 'cli-prompt';
+      prompt.textContent = '> ';
+      line.appendChild(prompt);
+
+      var user = document.createElement('span');
+      user.className = 'cli-user';
+      user.style.color = color;
+      user.textContent = name;
+      line.appendChild(user);
+
+      var sep = document.createElement('span');
+      sep.className = 'cli-sep';
+      sep.textContent = ' :: ';
+      line.appendChild(sep);
+
+      var msgSpan = document.createElement('span');
+      msgSpan.className = 'cli-msg';
+      msgSpan.textContent = msg;
+      line.appendChild(msgSpan);
+
+      cliChat.appendChild(line);
+      while (cliChat.children.length > MAX_LINES) {
+        cliChat.removeChild(cliChat.firstChild);
+      }
+    }
+
+    WatsonOS.on('chat-message', function(data) {
+      if (data && data.username) addChatLine(data);
+    });
+
+    /* ── Spotify Now Playing ── */
+    var npTrack = document.getElementById('np-track');
+    var npArtist = document.getElementById('np-artist');
+    var cliSpotify = document.getElementById('cli-spotify');
+
+    function updateNowPlaying() {
+      fetch('http://localhost:7500/spotify_info?_=' + Date.now())
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          if (data && data.is_playing && data.track_name) {
+            cliSpotify.style.display = 'block';
+            npTrack.textContent = data.track_name;
+            npArtist.textContent = data.artist_name || '';
+          } else {
+            cliSpotify.style.display = 'none';
+          }
+        })
+        .catch(function() { cliSpotify.style.display = 'none'; });
+    }
+
+    updateNowPlaying();
+    setInterval(updateNowPlaying, 5000);
+
+    /* ── Spinner ── */
+    var spinChars = ['–', '\\', '|', '/'];
+    var spinIdx = 0;
+    var npSpinner = document.getElementById('np-spinner');
+    setInterval(function() {
+      spinIdx = (spinIdx + 1) % spinChars.length;
+      npSpinner.textContent = spinChars[spinIdx];
+    }, 200);
+  </script>
+</body>
+</html>
