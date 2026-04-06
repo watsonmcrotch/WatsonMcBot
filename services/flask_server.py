@@ -907,6 +907,37 @@ def twitch_callback():
     return "Twitch callback received"
 
 
+@app.route('/api/overlay/stats')
+def overlay_stats():
+    """Serve latest trivia winner and edge duel winner for the stats overlay."""
+    from models import TriviaGame
+    try:
+        result = {}
+        if bot_instance and hasattr(bot_instance, 'db_manager'):
+            session = bot_instance.db_manager.get_session()
+            try:
+                last_game = session.query(TriviaGame)\
+                    .filter(TriviaGame.winner.isnot(None))\
+                    .order_by(TriviaGame.end_time.desc())\
+                    .first()
+                if last_game and last_game.winner:
+                    result['trivia_winner'] = last_game.winner
+                    result['trivia_category'] = last_game.category or ''
+            finally:
+                session.close()
+
+        if bot_instance and hasattr(bot_instance, 'last_duel_winner'):
+            duel = bot_instance.last_duel_winner
+            if duel:
+                result['duel_winner'] = duel.get('winner', '')
+                result['duel_loser'] = duel.get('loser', '')
+                result['duel_streak'] = duel.get('streak', 0)
+
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Error in overlay_stats: {e}")
+        return jsonify({}), 500
+
 @app.route('/assets/images/<path:filename>')
 def serve_image(filename):
     image_dir = BASE_DIR / 'overlays' / 'assets' / 'images'

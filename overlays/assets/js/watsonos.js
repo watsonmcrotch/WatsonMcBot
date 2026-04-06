@@ -138,10 +138,11 @@ const WatsonOS = (() => {
   }
 
   // ── Window Animations ─────────────────
-  function showWindow(win, container) {
+  function showWindow(win, container, soundOverride) {
     container = container || document.getElementById('overlay-container') || document.body;
     container.appendChild(win);
     win.style.animation = 'w95-open 0.3s cubic-bezier(.175,.885,.32,1.275) forwards';
+    playSound(soundOverride || './assets/sounds/popup.mp3', 0.5);
     return win;
   }
 
@@ -221,6 +222,7 @@ const WatsonOS = (() => {
   }
 
   function clickButton(btn) {
+    playSound('./assets/sounds/click.mp3', 0.4);
     btn.style.boxShadow = 'inset -1px -1px 0 #fff, inset 1px 1px 0 #000, inset -2px -2px 0 #dfdfdf, inset 2px 2px 0 #808080';
     btn.style.padding = '5px 19px 3px 21px';
     setTimeout(() => {
@@ -230,10 +232,10 @@ const WatsonOS = (() => {
   }
 
   // ── Sound Playback ────────────────────
-  function playSound(src) {
+  function playSound(src, volume) {
     try {
       const audio = new Audio(src);
-      audio.volume = 0.7;
+      audio.volume = typeof volume === 'number' ? volume : 0.7;
       audio.play().catch(() => {});
       return audio;
     } catch (e) {
@@ -264,8 +266,15 @@ const WatsonOS = (() => {
     connect();
   }
 
+  // ── Send Event via WebSocket ────────
+  function sendEvent(type, data) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: type, data: data }));
+    }
+  }
+
   return {
-    connect, on,
+    connect, on, sendEvent,
     createWindow, showWindow, dismissWindow,
     createCursor, moveCursorTo, moveCursorNatural, clickButton,
     playSound, randomInt, delay, escapeHtml

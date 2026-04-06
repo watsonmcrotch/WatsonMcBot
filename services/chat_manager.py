@@ -70,6 +70,20 @@ class ChatHandler:
                     'url': f"https://cdn.7tv.app/emote/{emote['id']}/1x.avif",
                     'animated': emote.get('animated', False)
                 })
+            elif word.startswith('@') and len(word) > 1:
+                mentioned = word[1:].lower().rstrip('.,!?:;')
+                mention_color = None
+                try:
+                    ctx = self.bot.db_manager.get_user_context(mentioned)
+                    mention_color = ctx.get('color')
+                except Exception:
+                    pass
+                fragments.append({
+                    'type': 'mention',
+                    'content': word + ' ',
+                    'username': mentioned,
+                    'color': mention_color
+                })
             else:
                 fragments.append({
                     'type': 'text',

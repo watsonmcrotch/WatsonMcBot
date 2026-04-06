@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WatsonOS Alerts</title>
   <link rel="stylesheet" href="./assets/css/watsonos.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
   <style>
     html, body {
       width: 1920px;
@@ -38,8 +39,8 @@
 
     /* Alert avatar */
     .alert-avatar {
-      width: 48px;
-      height: 48px;
+      width: 72px;
+      height: 72px;
       box-shadow:
         inset -1px -1px 0 #fff,
         inset 1px 1px 0 #808080,
@@ -49,44 +50,45 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
+      font-size: 36px;
       overflow: hidden;
       flex-shrink: 0;
     }
     .alert-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .alert-row { display: flex; align-items: center; gap: 12px; }
+    .alert-row { display: flex; align-items: center; gap: 16px; }
 
     .alert-text {
       font-family: var(--wf);
-      font-size: 12px;
+      font-size: 16px;
       line-height: 1.5;
     }
-    .alert-text .username { font-weight: bold; color: var(--win-title); }
-    .alert-text .sub-info { color: #808080; font-size: 11px; }
+    .alert-text .username { font-weight: bold; color: var(--win-title); font-size: 18px; }
+    .alert-text .sub-info { color: #808080; font-size: 14px; }
 
     /* Mega cheer */
     .mega-text {
       font-family: var(--tf);
-      font-size: 28px;
+      font-size: 48px;
       color: var(--win-title);
       text-align: center;
-      text-shadow: 1px 1px 0 #1084d0;
+      text-shadow: 2px 2px 0 #1084d0, -1px -1px 0 #2ec4b6;
+      letter-spacing: 2px;
     }
 
-    /* Raid warning pulse */
+    /* Raid warning — subtle amber glow, not aggressive red */
     .raid-warning {
-      animation: raid-pulse 0.5s ease infinite alternate;
+      animation: raid-pulse 1.5s ease infinite alternate;
     }
     @keyframes raid-pulse {
       0% { box-shadow:
         inset -1px -1px 0 #000, inset 1px 1px 0 #fff,
         inset -2px -2px 0 #808080, inset 2px 2px 0 #dfdfdf,
-        0 0 15px rgba(255,0,0,0.5); }
+        0 0 12px rgba(255,180,0,0.3); }
       100% { box-shadow:
         inset -1px -1px 0 #000, inset 1px 1px 0 #fff,
         inset -2px -2px 0 #808080, inset 2px 2px 0 #dfdfdf,
-        0 0 30px rgba(255,0,0,0.8); }
+        0 0 25px rgba(255,180,0,0.5); }
     }
 
     /* Raid accepted */
@@ -100,51 +102,302 @@
       background: linear-gradient(90deg, #006600, #00aa00) !important;
     }
 
-    /* 69-bit spam popups */
+    /* Raid full-screen overlay — subtle amber tint, not aggressive red */
+    .raid-screen-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 4999;
+      pointer-events: none;
+      animation: raid-screen-in 0.5s ease forwards;
+    }
+    .raid-screen-overlay .raid-scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 3px,
+        rgba(255, 180, 0, 0.02) 3px, rgba(255, 180, 0, 0.02) 6px
+      );
+    }
+    .raid-screen-overlay .raid-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(255, 140, 0, 0.08) 100%);
+      animation: raid-vignette-pulse 2s ease infinite alternate;
+    }
+    .raid-screen-overlay .raid-border {
+      position: absolute;
+      inset: 0;
+      border: 2px solid rgba(255, 180, 0, 0.3);
+      box-shadow: inset 0 0 40px rgba(255, 140, 0, 0.06);
+      animation: raid-border-glow 2s ease infinite alternate;
+    }
+    @keyframes raid-screen-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes raid-vignette-pulse {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    @keyframes raid-border-glow {
+      0% { border-color: rgba(255, 180, 0, 0.2); box-shadow: inset 0 0 30px rgba(255, 140, 0, 0.04); }
+      100% { border-color: rgba(255, 180, 0, 0.45); box-shadow: inset 0 0 50px rgba(255, 140, 0, 0.08); }
+    }
+
+    /* Raid accepted screen overlay */
+    .raid-screen-accept {
+      position: fixed;
+      inset: 0;
+      z-index: 4999;
+      pointer-events: none;
+      animation: raid-accept-in 0.5s ease forwards;
+    }
+    .raid-screen-accept .raid-accept-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 200, 0, 0.08) 100%);
+    }
+    .raid-screen-accept .raid-accept-border {
+      position: absolute;
+      inset: 0;
+      border: 2px solid rgba(0, 200, 0, 0.3);
+      box-shadow: inset 0 0 40px rgba(0, 200, 0, 0.06);
+    }
+    @keyframes raid-accept-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* 69-bit spam popups — adult, simple, selling-point front & center */
     .spam-popup { z-index: 5000; }
     .spam-popup .w95-titlebar {
-      background: linear-gradient(90deg, #ff0000, #ff6600) !important;
+      background: linear-gradient(90deg, #cc0000, #ff6600) !important;
     }
     .spam-popup .w95-body {
       background: #ffff00;
       text-align: center;
       font-family: 'Comic Sans MS', 'Comic Sans', cursive;
-      font-size: 14px;
       font-weight: bold;
+      padding: 16px 12px;
+    }
+    .spam-headline {
+      font-size: 22px;
+      color: #cc0000;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.15);
+    }
+    .spam-cta {
+      font-size: 14px;
+      color: #0000cc;
+      text-decoration: underline;
+      cursor: pointer;
     }
     .spam-blink {
-      animation: spam-blink-anim 0.3s step-end infinite;
+      animation: spam-blink-anim 0.5s step-end infinite;
     }
     @keyframes spam-blink-anim {
-      0%, 100% { color: #ff0000; }
-      50% { color: #0000ff; }
+      0%, 100% { visibility: visible; }
+      50% { visibility: hidden; }
     }
 
-    /* File transfer */
-    .ft-file-icon { font-size: 24px; text-align: center; margin-bottom: 6px; }
-    .ft-filename { font-family: var(--wf); font-size: 11px; color: #808080; }
+    /* File transfer — polished Win95 copy animation */
+    .ft-header-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .ft-header-row .alert-avatar {
+      width: 52px;
+      height: 52px;
+      font-size: 26px;
+    }
+    .ft-header-text {
+      font-family: var(--wf);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .ft-header-text .username { font-weight: bold; color: var(--win-title); font-size: 15px; }
+
+    .ft-anim-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 14px 0 10px;
+      position: relative;
+      height: 52px;
+    }
+    .ft-anim-row .ft-folder {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .ft-anim-row .ft-folder-icon {
+      font-size: 36px;
+      filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.2));
+    }
+    .ft-anim-row .ft-folder .alert-avatar {
+      width: 48px; height: 48px; font-size: 24px;
+    }
+    .ft-anim-track {
+      flex: 1;
+      position: relative;
+      height: 52px;
+      overflow: visible;
+      min-width: 120px;
+    }
+    .ft-flying-doc {
+      position: absolute;
+      top: 8px;
+      font-size: 28px;
+      filter: drop-shadow(1px 2px 1px rgba(0,0,0,0.25));
+      animation: ft-doc-fly 1.4s ease-in-out infinite;
+      z-index: 2;
+    }
+    .ft-flying-doc:nth-child(2) { animation-delay: 0.28s; opacity: 0.8; font-size: 22px; top: 0px; }
+    .ft-flying-doc:nth-child(3) { animation-delay: 0.56s; opacity: 0.9; font-size: 26px; top: 16px; }
+    .ft-flying-doc:nth-child(4) { animation-delay: 0.84s; opacity: 0.7; font-size: 20px; top: 4px; }
+    .ft-flying-doc:nth-child(5) { animation-delay: 1.12s; opacity: 0.85; font-size: 24px; top: 12px; }
+    @keyframes ft-doc-fly {
+      0%   { left: 0; transform: translateY(0) scale(1); opacity: 0; }
+      10%  { opacity: 1; transform: translateY(-4px) scale(1.05); }
+      50%  { transform: translateY(-12px) scale(1.1); opacity: 1; }
+      90%  { opacity: 1; transform: translateY(-4px) scale(1.05); }
+      100% { left: calc(100% - 20px); transform: translateY(0) scale(0.9); opacity: 0; }
+    }
+
+    .ft-detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--wf);
+      font-size: 12px;
+      color: #808080;
+      margin: 4px 0 2px;
+      padding: 0 2px;
+    }
+    .ft-filename { font-family: var(--wf); font-size: 12px; color: #808080; }
+    .ft-speed { font-family: var(--tf); font-size: 11px; color: #808080; }
+    .ft-time-remaining {
+      font-family: var(--wf);
+      font-size: 12px;
+      color: #000;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    /* Gift sub popup */
+    .gift-popup .w95-titlebar {
+      background: linear-gradient(90deg, #7b2d8e, #ff6600) !important;
+    }
+    .gift-popup.ft-complete .w95-titlebar {
+      background: linear-gradient(90deg, #006600, #00aa00) !important;
+    }
+    .gift-popup .w95-body {
+      padding: 14px 16px 10px;
+    }
 
     /* Shake on appear */
     .alert-shake { animation: w95-shake 0.5s ease; }
 
-    /* Intro boot sequence removed — now handled by video stinger transition in OBS */
+    /* ── Fullscreen overlay layer ── */
+    #fullscreen-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3000;
+    }
+    #fullscreen-layer > * { pointer-events: auto; }
+
+    .video-overlay, .video-display-wrapper, .image-display-wrapper {
+      pointer-events: none;
+    }
+    .video-display, .image-display {
+      display: block;
+    }
 
   </style>
 </head>
 <body>
   <div id="overlay-container"></div>
+  <div id="fullscreen-layer"></div>
 
   <script src="./assets/js/watsonos.js"></script>
   <script>
     WatsonOS.connect();
-    const container = document.getElementById('overlay-container');
-    const cursor = WatsonOS.createCursor();
+    var container = document.getElementById('overlay-container');
+    var cursor = WatsonOS.createCursor();
     cursor.style.display = 'none';
     document.body.appendChild(cursor);
 
+    /* ── Avatar Helper ──
+       decapi.me returns the CDN URL as plain text, NOT an image.
+       We must fetch the text first, then set img.src to the CDN URL.
+       resolveAvatar returns a Promise that resolves when the image is loaded. */
+    var avatarCache = {};
+
+    function resolveAvatar(username, imgEl) {
+      if (!username) { imgEl.parentNode.textContent = '\u{1F464}'; return Promise.resolve(); }
+      var lower = username.toLowerCase();
+
+      if (avatarCache[lower]) {
+        return new Promise(function(resolve) {
+          imgEl.onload = resolve;
+          imgEl.onerror = function() { this.parentNode.textContent = '\u{1F464}'; resolve(); };
+          imgEl.src = avatarCache[lower];
+        });
+      }
+
+      return fetch('https://decapi.me/twitch/avatar/' + encodeURIComponent(lower))
+        .then(function(r) {
+          if (!r.ok) throw new Error('not ok');
+          return r.text();
+        })
+        .then(function(url) {
+          url = url.trim();
+          if (url.indexOf('https://') === 0) {
+            avatarCache[lower] = url;
+            return new Promise(function(resolve) {
+              imgEl.onload = resolve;
+              imgEl.onerror = function() { this.parentNode.textContent = '\u{1F464}'; resolve(); };
+              imgEl.src = url;
+            });
+          } else {
+            imgEl.parentNode.textContent = '\u{1F464}';
+          }
+        })
+        .catch(function() {
+          imgEl.parentNode.textContent = '\u{1F464}';
+        });
+    }
+
+    /* Returns { el, ready } where ready is a Promise that resolves when the avatar is loaded */
+    function createAvatarEl(username) {
+      var div = document.createElement('div');
+      div.className = 'alert-avatar';
+      var img = document.createElement('img');
+      img.alt = username || '';
+      img.onerror = function() { this.parentNode.textContent = '\u{1F464}'; };
+      div.appendChild(img);
+      var ready = resolveAvatar(username, img);
+      return { el: div, ready: ready };
+    }
+
+    /* Wait for all avatar promises with a timeout so we never block forever */
+    function waitForAvatars(avatarResults, timeoutMs) {
+      var promises = avatarResults.map(function(a) { return a.ready; }).filter(Boolean);
+      if (promises.length === 0) return Promise.resolve();
+      var timeout = new Promise(function(resolve) { setTimeout(resolve, timeoutMs || 2000); });
+      return Promise.race([Promise.all(promises), timeout]);
+    }
+
     /* ── Alert Queue ── */
-    const alertQueue = [];
-    let alertBusy = false;
+    var alertQueue = [];
+    var alertBusy = false;
 
     function queueAlert(handler) {
       alertQueue.push(handler);
@@ -154,25 +407,25 @@
     function processQueue() {
       if (alertBusy || alertQueue.length === 0) return;
       alertBusy = true;
-      alertQueue.shift()(() => {
+      alertQueue.shift()(function() {
         alertBusy = false;
         setTimeout(processQueue, 300);
       });
     }
 
     function fireImmediate(handler) {
-      handler(() => {});
+      handler(function() {});
     }
 
     /* ── Cursor Helpers ── */
     function showCursorOffscreen() {
-      const edges = [
+      var edges = [
         { x: -30, y: WatsonOS.randomInt(200, 880) },
         { x: 1950, y: WatsonOS.randomInt(200, 880) },
         { x: WatsonOS.randomInt(400, 1520), y: -30 },
         { x: WatsonOS.randomInt(400, 1520), y: 1110 },
       ];
-      const edge = edges[WatsonOS.randomInt(0, 3)];
+      var edge = edges[WatsonOS.randomInt(0, 3)];
       cursor.style.transition = 'none';
       cursor.style.left = edge.x + 'px';
       cursor.style.top = edge.y + 'px';
@@ -183,20 +436,43 @@
 
     function centerPos() {
       return {
-        x: 760 + WatsonOS.randomInt(-80, 80),
-        y: 400 + WatsonOS.randomInt(-60, 60)
+        x: 660 + WatsonOS.randomInt(-80, 80),
+        y: 340 + WatsonOS.randomInt(-60, 60)
       };
     }
 
-    function avatarHTML(username) {
-      var safe = WatsonOS.escapeHtml(username);
-      return '<div class="alert-avatar"><img src="https://decapi.me/twitch/avatar/' +
-        encodeURIComponent(username) + '" onerror="this.parentNode.innerHTML=\'&#x1F464;\'" alt="' +
-        safe + '"></div>';
+    /* ── Progress bar with blocks ── */
+    function animateProgressBar(barId, durationMs) {
+      var bar = document.getElementById(barId);
+      if (!bar) return;
+      while (bar.firstChild) bar.removeChild(bar.firstChild);
+      var containerWidth = bar.parentElement.clientWidth - 4;
+      var blockWidth = 14;
+      var totalBlocks = Math.floor(containerWidth / blockWidth);
+      var interval = durationMs / totalBlocks;
+      var count = 0;
+      var timer = setInterval(function() {
+        if (count >= totalBlocks) { clearInterval(timer); return; }
+        var block = document.createElement('div');
+        block.className = 'progress-block';
+        bar.appendChild(block);
+        count++;
+      }, interval);
     }
 
-    /* Standard flow: show popup, cursor enters from off-screen, moves to button, clicks, dismisses */
-    async function standardAlert(win, btnId, waitMs, done) {
+    /* Cursor navigation */
+    function moveCursorToButton(btn, speed) {
+      if (!btn) return Promise.resolve();
+      var r = btn.getBoundingClientRect();
+      var tx = r.left + r.width / 2 - 5;
+      var ty = r.top + r.height / 2 - 2;
+      return new Promise(function(resolve) {
+        WatsonOS.moveCursorNatural(cursor, tx, ty, speed || 400, resolve);
+      });
+    }
+
+    /* Standard flow: show popup, cursor enters, moves to button, clicks, dismisses */
+    async function standardAlert(win, btnId, waitMs, cursorSpeed, done) {
       WatsonOS.showWindow(win, container);
       showCursorOffscreen();
 
@@ -204,13 +480,10 @@
 
       var btn = document.getElementById(btnId);
       if (btn) {
-        var r = btn.getBoundingClientRect();
-        WatsonOS.moveCursorNatural(cursor, r.left + r.width / 2 - 5, r.top + r.height / 2 - 2, 600, function() {
-          WatsonOS.clickButton(btn);
-          setTimeout(function() {
-            WatsonOS.dismissWindow(win, function() { hideCursor(); if (done) done(); });
-          }, 200);
-        });
+        await moveCursorToButton(btn, cursorSpeed || 400);
+        WatsonOS.clickButton(btn);
+        await WatsonOS.delay(150);
+        WatsonOS.dismissWindow(win, function() { hideCursor(); if (done) done(); });
       } else {
         WatsonOS.dismissWindow(win, function() { hideCursor(); if (done) done(); });
       }
@@ -218,27 +491,47 @@
 
     /* ════════════ FOLLOW ════════════ */
     WatsonOS.on('watsonos_follow', function(data) {
-      queueAlert(function(done) {
+      queueAlert(async function(done) {
         var username = data.username || 'Someone';
-        var safe = WatsonOS.escapeHtml(username);
+        var displayName = data.display_name || username;
         var pos = centerPos();
         var btnId = 'follow-ok-' + Date.now();
+
+        var avatar = createAvatarEl(username);
+
+        var bodyEl = document.createElement('div');
+        bodyEl.className = 'alert-row';
+        bodyEl.appendChild(avatar.el);
+        var textDiv = document.createElement('div');
+        textDiv.className = 'alert-text';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'username';
+        nameSpan.textContent = displayName;
+        textDiv.appendChild(nameSpan);
+        textDiv.appendChild(document.createTextNode(' just followed!'));
+        textDiv.appendChild(document.createElement('br'));
+        textDiv.appendChild(document.createTextNode('Thank you!'));
+        textDiv.appendChild(document.createElement('br'));
+        var subInfo = document.createElement('span');
+        subInfo.className = 'sub-info';
+        subInfo.textContent = displayName + ' has been added to the registry.';
+        textDiv.appendChild(subInfo);
+        bodyEl.appendChild(textDiv);
+
+        await waitForAvatars([avatar]);
 
         var win = WatsonOS.createWindow({
           title: 'New Follower Detected',
           icon: '\uD83D\uDCCB',
-          width: 380,
+          width: 480,
           x: pos.x, y: pos.y,
-          bodyHTML: '<div class="alert-row">' + avatarHTML(username) +
-            '<div class="alert-text"><span class="username">' + safe +
-            '</span> just followed!<br>Thank you!<br><span class="sub-info">' +
-            safe + ' has been added to the registry.</span></div></div>',
+          bodyContent: bodyEl,
           buttons: [{ label: 'OK', id: btnId }],
           id: 'follow-' + Date.now()
         });
 
         WatsonOS.playSound('./assets/sounds/follower.mp3');
-        standardAlert(win, btnId, 3000, done);
+        standardAlert(win, btnId, 3000, 900, done);
       });
     });
 
@@ -246,57 +539,92 @@
     WatsonOS.on('watsonos_bits', function(data) {
       var bits = parseInt(data.bits) || 0;
       var username = data.username || 'Someone';
-      var safe = WatsonOS.escapeHtml(username);
+      var displayName = data.display_name || username;
 
-      /* 69 bits — SPAM MODE (bypasses queue) */
+      /* 69 bits — SPAM MODE — adult, simple, selling-point front & centre */
       if (bits === 69) {
         fireImmediate(async function(done) {
-          var titles = [
-            'HOT SINGLES IN YOUR AREA!', 'ENLARGE YOUR... BITS?!',
-            'YOU WON $1,000,000!', 'FREE iPOD CLICK HERE!',
-            'CONGRATULATIONS!!!', 'YOUR PC HAS A VIRUS!',
-            'DOWNLOAD MORE RAM', 'ONE WEIRD TRICK!'
+          var ads = [
+            { headline: 'HOT SINGLES IN YOUR AREA', sub: 'Click here to meet them tonight!' },
+            { headline: 'ENLARGE YOUR PENIS TODAY', sub: 'Doctors don\'t want you to know this!' },
+            { headline: 'CONGRATULATIONS! YOU WON A FREE iPHONE!', sub: 'Claim your prize now before it expires!' },
+            { headline: 'YOU ARE THE 1,000,000th VISITOR!', sub: 'Click to claim your $10,000 cash prize!' },
+            { headline: 'MILFS IN YOUR NEIGHBOURHOOD', sub: 'No signup required. Browse now!' },
+            { headline: 'YOUR COMPUTER HAS 69 VIRUSES!', sub: 'Download WatsonAntiVirus NOW!' },
+            { headline: 'ONE WEIRD TRICK TO LAST LONGER', sub: 'She\'ll thank you later...' },
+            { headline: 'MAKE $5,000/DAY FROM HOME', sub: 'This secret method THEY don\'t want you to see' },
+            { headline: 'FREE VIAGRA SAMPLES', sub: 'No prescription needed! Limited time offer!' },
+            { headline: 'LONELY TONIGHT?', sub: 'Local singles are waiting for you right now!' },
+            { headline: 'GROW 3 INCHES IN 3 WEEKS', sub: 'The #1 method recommended by adult stars' },
+            { headline: 'YOUR WIFE DOESN\'T NEED TO KNOW', sub: 'Discreet encounters. Sign up free.' }
           ];
-          var spamCount = WatsonOS.randomInt(5, 8);
+          var spamCount = WatsonOS.randomInt(8, 14);
           var popups = [];
-          WatsonOS.playSound('./assets/sounds/nice.mp3');
+          setTimeout(function() { WatsonOS.playSound('./assets/sounds/nice.mp3'); }, 500);
+
+          /* Shuffle ads so we don't repeat */
+          var shuffled = ads.slice();
+          for (var s = shuffled.length - 1; s > 0; s--) {
+            var r = Math.floor(Math.random() * (s + 1));
+            var tmp = shuffled[s]; shuffled[s] = shuffled[r]; shuffled[r] = tmp;
+          }
+
+          var spamSchemes = [
+            { bg: '#ffff00', text: '#cc0000', bar: 'linear-gradient(90deg,#cc0000,#ff6600)' },
+            { bg: '#ff66cc', text: '#ffffff', bar: 'linear-gradient(90deg,#cc0066,#ff3399)' },
+            { bg: '#00ff00', text: '#000000', bar: 'linear-gradient(90deg,#006600,#00cc00)' },
+            { bg: '#ff6600', text: '#ffffff', bar: 'linear-gradient(90deg,#cc3300,#ff9900)' },
+            { bg: '#00ffff', text: '#cc0000', bar: 'linear-gradient(90deg,#0066cc,#00cccc)' },
+            { bg: '#ffffff', text: '#cc0000', bar: 'linear-gradient(90deg,#cc0000,#ff0000)' },
+            { bg: '#ffccff', text: '#660066', bar: 'linear-gradient(90deg,#990099,#cc00cc)' },
+          ];
 
           for (var i = 0; i < spamCount; i++) {
-            await WatsonOS.delay(WatsonOS.randomInt(100, 300));
-            var title = titles[WatsonOS.randomInt(0, titles.length - 1)];
-            var colors = ['#ff0000','#ff6600','#ff00ff','#00ff00','#ffff00'];
+            await WatsonOS.delay(WatsonOS.randomInt(80, 250));
+            var ad = shuffled[i % shuffled.length];
+            var scheme = spamSchemes[i % spamSchemes.length];
+            var popupW = WatsonOS.randomInt(300, 420);
+
+            var bodyDiv = document.createElement('div');
+            bodyDiv.style.background = scheme.bg;
+            var headlineDiv = document.createElement('div');
+            headlineDiv.className = 'spam-headline';
+            headlineDiv.style.color = scheme.text;
+            headlineDiv.textContent = ad.headline;
+            var ctaDiv = document.createElement('div');
+            ctaDiv.className = 'spam-cta spam-blink';
+            ctaDiv.textContent = ad.sub;
+            bodyDiv.appendChild(headlineDiv);
+            bodyDiv.appendChild(ctaDiv);
+
             var win = WatsonOS.createWindow({
-              title: title,
-              width: WatsonOS.randomInt(250, 380),
-              x: WatsonOS.randomInt(100, 1500),
-              y: WatsonOS.randomInt(50, 800),
-              bodyHTML: '<div style="font-family:\'Comic Sans MS\',cursive;font-size:' +
-                WatsonOS.randomInt(12,18) + 'px;font-weight:bold"><span class="spam-blink">' +
-                safe + ' cheered 69 bits!</span><br><span style="color:' +
-                colors[WatsonOS.randomInt(0, colors.length - 1)] +
-                ';font-size:' + WatsonOS.randomInt(16,24) + 'px">nice.</span></div>',
+              title: ad.headline,
+              width: popupW,
+              x: WatsonOS.randomInt(50, 1920 - popupW - 50),
+              y: WatsonOS.randomInt(30, 750),
+              bodyContent: bodyDiv,
               buttons: [{ label: 'CLOSE', id: 'spam-btn-' + i + '-' + Date.now() }],
               className: 'spam-popup',
               id: 'spam-' + i + '-' + Date.now()
             });
-            WatsonOS.showWindow(win, container);
+            var titlebar = win.querySelector('.w95-titlebar');
+            if (titlebar) titlebar.style.background = scheme.bar;
+            WatsonOS.showWindow(win, container, './assets/sounds/spam.mp3');
             popups.push(win);
           }
 
           await WatsonOS.delay(5000);
           showCursorOffscreen();
-          await WatsonOS.delay(300);
+          await WatsonOS.delay(200);
 
           for (var j = 0; j < popups.length; j++) {
             var popup = popups[j];
             if (!popup.parentNode) continue;
             var btn = popup.querySelector('.w95-title-btn');
             if (btn) {
-              var r = btn.getBoundingClientRect();
-              WatsonOS.moveCursorNatural(cursor, r.left + 8, r.top + 7, 200, function() {
-                WatsonOS.clickButton(btn);
-              });
-              await WatsonOS.delay(280);
+              await moveCursorToButton(btn, 150);
+              WatsonOS.clickButton(btn);
+              await WatsonOS.delay(120);
               WatsonOS.dismissWindow(popup);
             }
           }
@@ -306,21 +634,40 @@
         return;
       }
 
-      /* 1000+ bits — BSOD then cheer */
+      /* 1000+ bits — BSOD then big hype cheer */
       if (bits >= 1000) {
         queueAlert(async function(done) {
           WatsonOS.playSound('./assets/sounds/error.mp3');
           var bsod = document.createElement('div');
           bsod.className = 'w95-bsod';
-          bsod.innerHTML =
-            '<div class="w95-bsod-header">WatsonOS</div>' +
-            '<div class="w95-bsod-text">A fatal exception CHEER_OVERFLOW has occurred at 0x' +
-            bits.toString(16).toUpperCase().padStart(8,'0') +
-            '.<br><br>The current application will be terminated.<br><br>' +
-            '* Press any key to acknowledge the generous donation from ' + safe +
-            '.<br>* Press CTRL+ALT+DEL to restart your computer. You will<br>' +
-            '  lose any unsaved information in all applications.</div>' +
-            '<div class="w95-bsod-footer">Press any key to continue _</div>';
+
+          var header = document.createElement('div');
+          header.className = 'w95-bsod-header';
+          header.textContent = 'WatsonOS';
+
+          var text = document.createElement('div');
+          text.className = 'w95-bsod-text';
+          var lines = [
+            'A fatal exception CHEER_OVERFLOW has occurred at 0x' +
+              bits.toString(16).toUpperCase().padStart(8, '0') +
+              '. The current application will be terminated.',
+            '',
+            '*  Press any key to acknowledge the generous donation from ' + displayName + '.',
+            '*  Press CTRL+ALT+DEL to restart your computer. You will',
+            '   lose any unsaved information in all applications.'
+          ];
+          lines.forEach(function(line, i) {
+            if (i > 0) text.appendChild(document.createElement('br'));
+            text.appendChild(document.createTextNode(line));
+          });
+
+          var footer = document.createElement('div');
+          footer.className = 'w95-bsod-footer';
+          footer.textContent = 'Press any key to continue _';
+
+          bsod.appendChild(header);
+          bsod.appendChild(text);
+          bsod.appendChild(footer);
           container.appendChild(bsod);
 
           await WatsonOS.delay(4000);
@@ -334,18 +681,52 @@
           container.appendChild(flash);
           setTimeout(function() { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 500);
 
+          /* Post-BSOD hype popup */
           var pos = centerPos();
           var btnId = 'bsod-ok-' + Date.now();
+
+          var bsodAvatar = createAvatarEl(username);
+
+          var bodyEl = document.createElement('div');
+          bodyEl.style.cssText = 'text-align:center;padding:12px';
+
+          var avatarRow = document.createElement('div');
+          avatarRow.className = 'alert-row';
+          avatarRow.style.cssText = 'justify-content:center;margin-bottom:12px';
+          avatarRow.appendChild(bsodAvatar.el);
+          await waitForAvatars([bsodAvatar]);
+          bodyEl.appendChild(avatarRow);
+
+          var megaDiv = document.createElement('div');
+          megaDiv.className = 'mega-text';
+          megaDiv.textContent = bits.toLocaleString() + ' BITS!';
+          bodyEl.appendChild(megaDiv);
+
+          var hypeDiv = document.createElement('div');
+          hypeDiv.className = 'alert-text';
+          hypeDiv.style.cssText = 'margin-top:12px;font-size:18px';
+          var nameSpan = document.createElement('span');
+          nameSpan.className = 'username';
+          nameSpan.style.fontSize = '22px';
+          nameSpan.textContent = displayName;
+          hypeDiv.appendChild(nameSpan);
+          hypeDiv.appendChild(document.createTextNode(' just blue-screened WatsonOS!'));
+          hypeDiv.appendChild(document.createElement('br'));
+          var hypeExtra = document.createElement('span');
+          hypeExtra.style.cssText = 'color:#7b2d8e;font-weight:bold;font-size:16px';
+          hypeExtra.textContent = 'Absolute legend. The system couldn\'t handle it.';
+          hypeDiv.appendChild(hypeExtra);
+          bodyEl.appendChild(hypeDiv);
+
           var win = WatsonOS.createWindow({
-            title: 'MEGA CHEER!', icon: '\uD83D\uDD25', width: 400,
+            title: 'SYSTEM RECOVERY \u2014 MEGA CHEER!', icon: '\uD83D\uDD25', width: 520,
             x: pos.x, y: pos.y,
-            bodyHTML: '<div style="text-align:center;padding:8px"><div class="mega-text">' +
-              bits + ' BITS!</div><div class="alert-text" style="margin-top:8px"><span class="username">' +
-              safe + '</span> just crashed the system<br>with a massive cheer!</div></div>',
-            buttons: [{ label: 'Reboot', id: btnId }],
+            bodyContent: bodyEl,
+            buttons: [{ label: 'Reboot System', id: btnId }],
+            className: 'alert-shake',
             id: 'bsod-cheer-' + Date.now()
           });
-          standardAlert(win, btnId, 3000, done);
+          standardAlert(win, btnId, 4000, 500, done);
         });
         return;
       }
@@ -353,6 +734,8 @@
       /* 100-999 bits — MEGA CHEER */
       if (bits >= 100) {
         queueAlert(async function(done) {
+          var megaAvatar = createAvatarEl(username);
+
           WatsonOS.playSound('./assets/sounds/bit_mega.mp3');
           var flash = document.createElement('div');
           flash.className = 'screen-flash';
@@ -361,54 +744,111 @@
 
           var pos = centerPos();
           var btnId = 'mega-ok-' + Date.now();
+
+          var bodyEl = document.createElement('div');
+          bodyEl.style.cssText = 'text-align:center;padding:12px';
+          var avatarRow = document.createElement('div');
+          avatarRow.className = 'alert-row';
+          avatarRow.style.cssText = 'justify-content:center;margin-bottom:12px';
+          avatarRow.appendChild(megaAvatar.el);
+          bodyEl.appendChild(avatarRow);
+          await waitForAvatars([megaAvatar]);
+
+          var megaDiv = document.createElement('div');
+          megaDiv.className = 'mega-text';
+          megaDiv.textContent = bits + ' BITS!';
+          bodyEl.appendChild(megaDiv);
+
+          var infoDiv = document.createElement('div');
+          infoDiv.className = 'alert-text';
+          infoDiv.style.marginTop = '12px';
+          var nameSpan = document.createElement('span');
+          nameSpan.className = 'username';
+          nameSpan.textContent = displayName;
+          infoDiv.appendChild(nameSpan);
+          infoDiv.appendChild(document.createTextNode(' cheered ' + bits + ' bits!'));
+          bodyEl.appendChild(infoDiv);
+
           var win = WatsonOS.createWindow({
-            title: 'MEGA CHEER!', icon: '\uD83D\uDD25', width: 400,
+            title: 'MEGA CHEER!', icon: '\uD83D\uDD25', width: 500,
             x: pos.x, y: pos.y,
-            bodyHTML: '<div style="text-align:center;padding:8px"><div class="mega-text">' +
-              bits + ' BITS!</div><div class="alert-text" style="margin-top:8px"><span class="username">' +
-              safe + '</span> cheered ' + bits + ' bits!</div></div>',
+            bodyContent: bodyEl,
             buttons: [{ label: 'Amazing!', id: btnId }],
             id: 'mega-' + Date.now()
           });
-          standardAlert(win, btnId, 5000, done);
+          standardAlert(win, btnId, 5000, 400, done);
         });
         return;
       }
 
       /* 10-99 bits (except 69) — MID CHEER */
       if (bits >= 10) {
-        queueAlert(function(done) {
+        queueAlert(async function(done) {
+          var midAvatar = createAvatarEl(username);
+
           WatsonOS.playSound('./assets/sounds/bit_mid.mp3');
           var pos = centerPos();
           var btnId = 'mid-ok-' + Date.now();
+
+          var bodyEl = document.createElement('div');
+          bodyEl.className = 'alert-row';
+          bodyEl.appendChild(midAvatar.el);
+          await waitForAvatars([midAvatar]);
+          var textDiv = document.createElement('div');
+          textDiv.className = 'alert-text';
+          var nameSpan = document.createElement('span');
+          nameSpan.className = 'username';
+          nameSpan.textContent = displayName;
+          textDiv.appendChild(nameSpan);
+          textDiv.appendChild(document.createTextNode(' cheered '));
+          var strong = document.createElement('strong');
+          strong.textContent = bits;
+          textDiv.appendChild(strong);
+          textDiv.appendChild(document.createTextNode(' bits!'));
+          bodyEl.appendChild(textDiv);
+
           var win = WatsonOS.createWindow({
-            title: 'Cheer Alert!', icon: '\uD83C\uDF89', width: 360,
+            title: 'Cheer Alert!', icon: '\uD83C\uDF89', width: 450,
             x: pos.x, y: pos.y,
-            bodyHTML: '<div class="alert-text" style="text-align:center;padding:4px"><span class="username">' +
-              safe + '</span> cheered <strong>' + bits + '</strong> bits!</div>',
+            bodyContent: bodyEl,
             buttons: [{ label: 'Thanks!', id: btnId }],
             className: 'alert-shake',
             id: 'mid-' + Date.now()
           });
-          standardAlert(win, btnId, 4000, done);
+          standardAlert(win, btnId, 4000, 400, done);
         });
         return;
       }
 
       /* 1-9 bits — SMALL CHEER */
-      queueAlert(function(done) {
+      queueAlert(async function(done) {
+        var smallAvatar = createAvatarEl(username);
+
         WatsonOS.playSound('./assets/sounds/bit_small.mp3');
         var pos = centerPos();
         var btnId = 'small-ok-' + Date.now();
+
+        var bodyEl = document.createElement('div');
+        bodyEl.className = 'alert-row';
+        bodyEl.appendChild(smallAvatar.el);
+        await waitForAvatars([smallAvatar]);
+        var textDiv = document.createElement('div');
+        textDiv.className = 'alert-text';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'username';
+        nameSpan.textContent = displayName;
+        textDiv.appendChild(nameSpan);
+        textDiv.appendChild(document.createTextNode(' cheered ' + bits + ' bits!'));
+        bodyEl.appendChild(textDiv);
+
         var win = WatsonOS.createWindow({
-          title: 'Cheer Alert', icon: '\uD83D\uDCB0', width: 320,
+          title: 'Cheer Alert', icon: '\uD83D\uDCB0', width: 420,
           x: pos.x, y: pos.y,
-          bodyHTML: '<div class="alert-text"><span class="username">' +
-            safe + '</span> cheered ' + bits + ' bits!</div>',
+          bodyContent: bodyEl,
           buttons: [{ label: 'Thanks!', id: btnId }],
           id: 'small-' + Date.now()
         });
-        standardAlert(win, btnId, 3000, done);
+        standardAlert(win, btnId, 3000, 400, done);
       });
     });
 
@@ -416,73 +856,155 @@
     WatsonOS.on('watsonos_raid', function(data) {
       queueAlert(async function(done) {
         var username = data.username || 'Someone';
+        var displayName = data.display_name || username;
         var viewers = data.viewer_count || 0;
-        var safe = WatsonOS.escapeHtml(username);
 
         WatsonOS.playSound('./assets/sounds/raid_warning.mp3');
 
-        // Phase 1: Warning
-        var pos1 = centerPos();
-        var btnId1 = 'raid-warn-' + Date.now();
-        var warn = WatsonOS.createWindow({
-          title: 'WARNING: Incoming Connection', icon: '\u26A0\uFE0F', width: 420,
-          x: pos1.x, y: pos1.y,
-          bodyHTML: '<div class="alert-row">' + avatarHTML(username) +
-            '<div class="alert-text" style="color:#cc0000;font-weight:bold">' +
-            'INCOMING CONNECTION ATTEMPT<br>FROM <span class="username">' + safe +
-            '</span>...<br><br><span style="font-size:14px">' + viewers +
-            ' connections detected</span></div></div>',
-          buttons: [{ label: 'Accept', id: btnId1 }],
+        // Full-screen raid overlay
+        var raidOverlay = document.createElement('div');
+        raidOverlay.className = 'raid-screen-overlay';
+        var scanlines = document.createElement('div');
+        scanlines.className = 'raid-scanlines';
+        var vignette = document.createElement('div');
+        vignette.className = 'raid-vignette';
+        var raidBorder = document.createElement('div');
+        raidBorder.className = 'raid-border';
+        raidOverlay.appendChild(scanlines);
+        raidOverlay.appendChild(vignette);
+        raidOverlay.appendChild(raidBorder);
+        container.appendChild(raidOverlay);
+
+        // Single popup with Accept / Deny
+        var pos = centerPos();
+        var acceptId = 'raid-accept-' + Date.now();
+        var denyId = 'raid-deny-' + Date.now();
+
+        var body = document.createElement('div');
+
+        // Avatar row centred
+        var raidAvatar = createAvatarEl(username);
+        var avatarRow = document.createElement('div');
+        avatarRow.style.cssText = 'display:flex;justify-content:center;margin-bottom:12px';
+        avatarRow.appendChild(raidAvatar.el);
+        body.appendChild(avatarRow);
+        await waitForAvatars([raidAvatar]);
+
+        // Main text
+        var textDiv = document.createElement('div');
+        textDiv.className = 'alert-text';
+        textDiv.style.cssText = 'text-align:center;font-size:16px';
+
+        textDiv.appendChild(document.createTextNode('Incoming connection attempt from'));
+        textDiv.appendChild(document.createElement('br'));
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'username';
+        nameSpan.style.fontSize = '22px';
+        nameSpan.textContent = displayName;
+        textDiv.appendChild(nameSpan);
+        textDiv.appendChild(document.createElement('br'));
+        textDiv.appendChild(document.createElement('br'));
+
+        textDiv.appendChild(document.createTextNode('Do you want to accept '));
+        var viewerStrong = document.createElement('strong');
+        viewerStrong.style.cssText = 'font-size:20px;color:#2ec4b6';
+        viewerStrong.textContent = viewers.toLocaleString();
+        textDiv.appendChild(viewerStrong);
+        textDiv.appendChild(document.createTextNode(' connections'));
+        textDiv.appendChild(document.createElement('br'));
+        textDiv.appendChild(document.createTextNode('from '));
+        var nameSpan2 = document.createElement('span');
+        nameSpan2.className = 'username';
+        nameSpan2.textContent = displayName;
+        textDiv.appendChild(nameSpan2);
+        textDiv.appendChild(document.createTextNode('?'));
+
+        body.appendChild(textDiv);
+
+        // Connection status bar
+        var statusDiv = document.createElement('div');
+        statusDiv.style.cssText = 'margin-top:12px;font-family:var(--tf);font-size:14px;color:#808080;text-align:center';
+        statusDiv.textContent = 'Awaiting operator response...';
+        body.appendChild(statusDiv);
+
+        var win = WatsonOS.createWindow({
+          title: 'Incoming Connection', icon: '\u26A0\uFE0F', width: 540,
+          x: pos.x, y: pos.y,
+          bodyContent: body,
+          buttons: [
+            { label: 'Accept', id: acceptId },
+            { label: 'Deny', id: denyId }
+          ],
           className: 'raid-warning',
-          id: 'raid-warn-' + Date.now()
+          id: 'raid-' + Date.now()
         });
 
-        WatsonOS.showWindow(warn, container);
+        WatsonOS.showWindow(win, container);
         showCursorOffscreen();
-        await WatsonOS.delay(3000);
 
-        var btn1 = document.getElementById(btnId1);
-        if (btn1) {
-          var r1 = btn1.getBoundingClientRect();
-          WatsonOS.moveCursorNatural(cursor, r1.left + r1.width / 2 - 5, r1.top + r1.height / 2 - 2, 500, function() {
-            WatsonOS.clickButton(btn1);
-          });
+        // Blink the status text while waiting
+        var blinkCount = 0;
+        var blinkTimer = setInterval(function() {
+          blinkCount++;
+          var dots = '.'.repeat((blinkCount % 3) + 1);
+          statusDiv.textContent = 'Awaiting operator response' + dots;
+        }, 600);
+
+        await WatsonOS.delay(3500);
+        clearInterval(blinkTimer);
+
+        // Mouse clicks Accept
+        var acceptBtn = document.getElementById(acceptId);
+        if (acceptBtn) {
+          await moveCursorToButton(acceptBtn, 500);
+          WatsonOS.clickButton(acceptBtn);
         }
-        await WatsonOS.delay(400);
-        WatsonOS.dismissWindow(warn);
+        await WatsonOS.delay(200);
 
+        // Update popup in-place to show accepted state
         WatsonOS.playSound('./assets/sounds/raid_accept.mp3');
 
-        // Phase 2: Accepted
-        var pos2 = centerPos();
-        var btnId2 = 'raid-ok-' + Date.now();
-        var accept = WatsonOS.createWindow({
-          title: 'Connection Accepted', icon: '\u2705', width: 420,
-          x: pos2.x, y: pos2.y,
-          bodyHTML: '<div class="alert-row">' + avatarHTML(username) +
-            '<div class="alert-text"><span class="username">' + safe +
-            '</span> has connected with <strong>' + viewers +
-            '</strong> viewers!<br><br>Welcome raiders!</div></div>',
-          buttons: [{ label: 'Welcome!', id: btnId2 }],
-          className: 'raid-accepted',
-          id: 'raid-ok-' + Date.now()
-        });
+        // Swap overlay from amber to green
+        if (raidOverlay.parentNode) raidOverlay.parentNode.removeChild(raidOverlay);
+        var acceptOverlay = document.createElement('div');
+        acceptOverlay.className = 'raid-screen-accept';
+        var acceptVignette = document.createElement('div');
+        acceptVignette.className = 'raid-accept-vignette';
+        var acceptBorderEl = document.createElement('div');
+        acceptBorderEl.className = 'raid-accept-border';
+        acceptOverlay.appendChild(acceptVignette);
+        acceptOverlay.appendChild(acceptBorderEl);
+        container.appendChild(acceptOverlay);
 
-        WatsonOS.showWindow(accept, container);
+        // Update window title bar to green accepted state
+        win.className = win.className.replace('raid-warning', 'raid-accepted');
+        var titleText = win.querySelector('.w95-title-text');
+        if (titleText) titleText.textContent = '\u2705 Connection Accepted';
+
+        // Update body content
+        statusDiv.style.color = '#00aa00';
+        statusDiv.style.fontWeight = 'bold';
+        statusDiv.textContent = 'CONNECTION ESTABLISHED \u2014 ' + viewers.toLocaleString() + ' viewers connected. Welcome raiders!';
+
+        // Disable buttons visually
+        var denyBtn = document.getElementById(denyId);
+        if (denyBtn) denyBtn.style.display = 'none';
+        if (acceptBtn) { acceptBtn.textContent = 'OK'; acceptBtn.id = 'raid-ok-' + Date.now(); }
+        var okId = acceptBtn ? acceptBtn.id : null;
+
         await WatsonOS.delay(4000);
 
-        var btn2 = document.getElementById(btnId2);
-        if (btn2) {
-          var r2 = btn2.getBoundingClientRect();
-          WatsonOS.moveCursorNatural(cursor, r2.left + r2.width / 2 - 5, r2.top + r2.height / 2 - 2, 500, function() {
-            WatsonOS.clickButton(btn2);
-            setTimeout(function() {
-              WatsonOS.dismissWindow(accept, function() { hideCursor(); done(); });
-            }, 200);
-          });
-        } else {
-          WatsonOS.dismissWindow(accept, function() { hideCursor(); done(); });
+        // Dismiss
+        if (okId) {
+          var okBtn = document.getElementById(okId);
+          if (okBtn) {
+            await moveCursorToButton(okBtn, 500);
+            WatsonOS.clickButton(okBtn);
+            await WatsonOS.delay(150);
+          }
         }
+        if (acceptOverlay.parentNode) acceptOverlay.parentNode.removeChild(acceptOverlay);
+        WatsonOS.dismissWindow(win, function() { hideCursor(); done(); });
       });
     });
 
@@ -490,18 +1012,14 @@
     WatsonOS.on('watsonos_sub', function(data) {
       queueAlert(async function(done) {
         var username = data.username || 'Someone';
+        var displayName = data.display_name || username;
         var tier = parseInt(data.tier) || 1;
         var isResub = data.is_resub || false;
         var months = data.cumulative_months || 0;
-        var safe = WatsonOS.escapeHtml(username);
 
         WatsonOS.playSound('./assets/sounds/sub_alert.mp3');
 
         var tierLabel = tier === 3 ? 'Tier 3' : tier === 2 ? 'Tier 2' : 'Tier 1';
-        var subText = '<span class="username">' + safe + '</span> just subscribed!<br>' + tierLabel;
-        if (isResub && months > 1) {
-          subText += '<br><span class="sub-info">' + months + ' months in a row!</span>';
-        }
 
         if (tier >= 3) {
           var flash = document.createElement('div');
@@ -510,18 +1028,42 @@
           setTimeout(function() { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 500);
         }
 
+        var subAvatar = createAvatarEl(username);
+
+        var bodyEl = document.createElement('div');
+        bodyEl.className = 'alert-row';
+        bodyEl.appendChild(subAvatar.el);
+        var textDiv = document.createElement('div');
+        textDiv.className = 'alert-text';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'username';
+        nameSpan.textContent = displayName;
+        textDiv.appendChild(nameSpan);
+        textDiv.appendChild(document.createTextNode(' just subscribed!'));
+        textDiv.appendChild(document.createElement('br'));
+        textDiv.appendChild(document.createTextNode(tierLabel));
+        if (isResub && months > 1) {
+          textDiv.appendChild(document.createElement('br'));
+          var monthSpan = document.createElement('span');
+          monthSpan.className = 'sub-info';
+          monthSpan.textContent = months + ' months in a row!';
+          textDiv.appendChild(monthSpan);
+        }
+        bodyEl.appendChild(textDiv);
+
+        await waitForAvatars([subAvatar]);
+
         var pos = centerPos();
         var btnId = 'sub-ok-' + Date.now();
         var win = WatsonOS.createWindow({
-          title: 'Subscription Alert', icon: '\u2B50', width: 380,
+          title: 'Subscription Alert', icon: '\u2B50', width: 480,
           x: pos.x, y: pos.y,
-          bodyHTML: '<div class="alert-row">' + avatarHTML(username) +
-            '<div class="alert-text">' + subText + '</div></div>',
+          bodyContent: bodyEl,
           buttons: [{ label: 'Welcome!', id: btnId }],
           className: tier >= 2 ? 'alert-shake' : '',
           id: 'sub-' + Date.now()
         });
-        standardAlert(win, btnId, 4000, done);
+        standardAlert(win, btnId, 4000, 400, done);
       });
     });
 
@@ -529,53 +1071,168 @@
     WatsonOS.on('watsonos_giftsub', function(data) {
       var gifter = data.gifter || 'Someone';
       var totalSubs = parseInt(data.total_subs) || 1;
-      var safe = WatsonOS.escapeHtml(gifter);
+      var recipient = data.recipient || null;
+      /* Login names for avatar lookups — ALWAYS use raw usernames for avatars */
+      var gifterLogin = data.gifter_login || gifter;
+      var recipientLogin = data.recipient_login || recipient;
 
-      /* 5+ gifts — mass transfer windows (bypasses queue) */
+      /* Build polished Win95 file-copy transfer body */
+      function buildTransferBody(gifterName, gifterUser, recipientName, recipientUser, subNum, subTotal) {
+        var body = document.createElement('div');
+        var avatars = [];
+
+        /* Header text describing the transfer */
+        var headerText = document.createElement('div');
+        headerText.className = 'ft-header-text';
+        headerText.style.textAlign = 'center';
+        var gNameSpan = document.createElement('span');
+        gNameSpan.className = 'username';
+        gNameSpan.textContent = gifterName;
+        headerText.appendChild(gNameSpan);
+        if (recipientName) {
+          headerText.appendChild(document.createTextNode(' is gifting a sub to '));
+          var rNameSpan = document.createElement('span');
+          rNameSpan.className = 'username';
+          rNameSpan.textContent = recipientName;
+          headerText.appendChild(rNameSpan);
+        } else if (subTotal > 1) {
+          headerText.appendChild(document.createTextNode(' is gifting sub ' + subNum + ' of ' + subTotal));
+        } else {
+          headerText.appendChild(document.createTextNode(' is gifting a subscription'));
+        }
+        body.appendChild(headerText);
+
+        /* Animated transfer row: gifter avatar -> flying presents -> recipient avatar */
+        var animRow = document.createElement('div');
+        animRow.className = 'ft-anim-row';
+
+        var srcSide = document.createElement('div');
+        srcSide.className = 'ft-folder';
+        var gAvatarAnim = createAvatarEl(gifterUser);
+        avatars.push(gAvatarAnim);
+        srcSide.appendChild(gAvatarAnim.el);
+        animRow.appendChild(srcSide);
+
+        var track = document.createElement('div');
+        track.className = 'ft-anim-track';
+        var flyEmoji = ['\uD83C\uDF81', '\u2728', '\uD83C\uDF81', '\uD83C\uDF1F', '\uD83C\uDF81'];
+        for (var d = 0; d < 5; d++) {
+          var gift = document.createElement('div');
+          gift.className = 'ft-flying-doc';
+          gift.textContent = flyEmoji[d];
+          track.appendChild(gift);
+        }
+        animRow.appendChild(track);
+
+        var destSide = document.createElement('div');
+        destSide.className = 'ft-folder';
+        if (recipientUser) {
+          var rAvatar = createAvatarEl(recipientUser);
+          avatars.push(rAvatar);
+          destSide.appendChild(rAvatar.el);
+        } else {
+          var destIcon = document.createElement('span');
+          destIcon.className = 'ft-folder-icon';
+          destIcon.textContent = '\uD83C\uDF81';
+          destSide.appendChild(destIcon);
+        }
+        animRow.appendChild(destSide);
+        body.appendChild(animRow);
+
+        /* File detail row */
+        var detailRow = document.createElement('div');
+        detailRow.className = 'ft-detail-row';
+        var fileLabel = document.createElement('span');
+        fileLabel.className = 'ft-filename';
+        fileLabel.textContent = recipientName
+          ? 'gift_sub_' + recipientName.replace(/\s/g, '_') + '.exe'
+          : 'gift_sub_' + subNum + '.exe';
+        detailRow.appendChild(fileLabel);
+        var speedLabel = document.createElement('span');
+        speedLabel.className = 'ft-speed';
+        var fakeBps = WatsonOS.randomInt(28, 56);
+        speedLabel.textContent = fakeBps + '.' + WatsonOS.randomInt(1,9) + ' KB/s';
+        detailRow.appendChild(speedLabel);
+        body.appendChild(detailRow);
+
+        /* Progress bar */
+        var barId = 'ft-bar-' + subNum + '-' + Date.now();
+        var progressWrap = document.createElement('div');
+        progressWrap.style.margin = '6px 0 4px';
+        var progressOuter = document.createElement('div');
+        progressOuter.className = 'w95-progress';
+        var progressFill = document.createElement('div');
+        progressFill.className = 'w95-progress-fill';
+        progressFill.id = barId;
+        progressOuter.appendChild(progressFill);
+        progressWrap.appendChild(progressOuter);
+        body.appendChild(progressWrap);
+
+        /* Time remaining label */
+        var timeLabel = document.createElement('div');
+        timeLabel.className = 'ft-time-remaining';
+        var fakeSecs = WatsonOS.randomInt(8, 25);
+        timeLabel.textContent = 'Time remaining: About ' + fakeSecs + ' seconds';
+        body.appendChild(timeLabel);
+
+        return { body: body, barId: barId, avatars: avatars, timeLabel: timeLabel };
+      }
+
+      /* 5+ gifts — one popup PER gift at random locations */
       if (totalSubs >= 5) {
         fireImmediate(async function(done) {
           WatsonOS.playSound('./assets/sounds/giftsub_mass.mp3');
           var popups = [];
-          var count = Math.min(totalSubs, 8);
 
-          for (var i = 0; i < count; i++) {
-            await WatsonOS.delay(WatsonOS.randomInt(200, 500));
-            var barId = 'ft-bar-m-' + i + '-' + Date.now();
+          /* Pre-resolve the gifter avatar once so it caches for all popups */
+          var preGifter = createAvatarEl(gifterLogin);
+          await waitForAvatars([preGifter], 2000);
+
+          for (var i = 0; i < totalSubs; i++) {
+            await WatsonOS.delay(WatsonOS.randomInt(120, 350));
+            var popupW = 440;
+            var ft = buildTransferBody(gifter, gifterLogin, null, null, i + 1, totalSubs);
+
             var win = WatsonOS.createWindow({
-              title: 'File Transfer \u2014 Gift Subscription', icon: '\uD83D\uDCC1',
-              width: 350,
-              x: WatsonOS.randomInt(200, 1400),
-              y: WatsonOS.randomInt(100, 700),
-              bodyHTML: '<div class="ft-file-icon">\uD83D\uDCE6\u27A1\uFE0F\uD83C\uDF81</div>' +
-                '<div class="alert-text">' + safe + ' is gifting sub ' + (i + 1) +
-                ' of ' + totalSubs + '...</div>' +
-                '<div style="margin:8px 0"><div class="w95-progress"><div class="w95-progress-fill" id="' +
-                barId + '" style="width:0%"></div></div></div>' +
-                '<div class="ft-filename">gift_sub_' + (i + 1) + '.exe</div>',
+              title: 'Copying... Gift Sub ' + (i + 1) + '/' + totalSubs,
+              icon: '\uD83D\uDCC1',
+              width: popupW,
+              x: WatsonOS.randomInt(50, 1920 - popupW - 50),
+              y: WatsonOS.randomInt(30, 1080 - 250),
+              bodyContent: ft.body,
               buttons: [],
+              className: 'gift-popup',
               id: 'ft-m-' + i + '-' + Date.now()
             });
             WatsonOS.showWindow(win, container);
-            popups.push(win);
+            popups.push({ win: win, ft: ft });
 
-            var bar = document.getElementById(barId);
-            if (bar) setTimeout(function(b) { b.style.width = '100%'; }, 100, bar);
+            animateProgressBar(ft.barId, 2500);
           }
 
-          await WatsonOS.delay(4000);
+          await WatsonOS.delay(4500);
+
+          /* Mark all as complete */
+          for (var k = 0; k < popups.length; k++) {
+            var p = popups[k];
+            if (p.ft.timeLabel) p.ft.timeLabel.textContent = 'Transfer Complete!';
+            if (p.win.parentNode) p.win.className = p.win.className + ' ft-complete';
+            var titleEl = p.win.querySelector('.w95-title-text');
+            if (titleEl) titleEl.textContent = '\u2705 Gift Sub ' + (k+1) + '/' + totalSubs + ' \u2014 Complete';
+          }
+
+          await WatsonOS.delay(1500);
           showCursorOffscreen();
-          await WatsonOS.delay(300);
+          await WatsonOS.delay(200);
 
           for (var j = 0; j < popups.length; j++) {
-            var popup = popups[j];
+            var popup = popups[j].win;
             if (!popup.parentNode) continue;
             var btn = popup.querySelector('.w95-title-btn');
             if (btn) {
-              var r = btn.getBoundingClientRect();
-              WatsonOS.moveCursorNatural(cursor, r.left + 8, r.top + 7, 200, function() {
-                WatsonOS.clickButton(btn);
-              });
-              await WatsonOS.delay(250);
+              await moveCursorToButton(btn, 120);
+              WatsonOS.clickButton(btn);
+              await WatsonOS.delay(100);
               WatsonOS.dismissWindow(popup);
             }
           }
@@ -585,25 +1242,24 @@
         return;
       }
 
-      /* 1-4 gifts — single file transfer window */
+      /* 1-4 gifts — single file transfer window with both avatars */
       queueAlert(async function(done) {
         WatsonOS.playSound('./assets/sounds/giftsub.mp3');
         var pos = centerPos();
         var btnId = 'ft-ok-' + Date.now();
-        var barId = 'ft-bar-' + Date.now();
-        var statusId = 'ft-status-' + Date.now();
+
+        var ft = buildTransferBody(gifter, gifterLogin, recipient, recipientLogin, 1, totalSubs);
+
+        /* Wait for both avatars to load before showing the window */
+        await waitForAvatars(ft.avatars, 2500);
 
         var win = WatsonOS.createWindow({
-          title: 'File Transfer \u2014 Gift Subscription', icon: '\uD83D\uDCC1',
-          width: 380,
+          title: 'Copying... Gift Subscription', icon: '\uD83D\uDCC1',
+          width: 500,
           x: pos.x, y: pos.y,
-          bodyHTML: '<div class="ft-file-icon">\uD83D\uDCE6\u27A1\uFE0F\uD83C\uDF81</div>' +
-            '<div class="alert-text">' + safe + ' is sending ' +
-            (totalSubs > 1 ? totalSubs + ' subscriptions' : 'a subscription') + '...</div>' +
-            '<div style="margin:8px 0"><div class="w95-progress"><div class="w95-progress-fill" id="' +
-            barId + '" style="width:0%"></div></div></div>' +
-            '<div class="ft-filename" id="' + statusId + '">Transferring gift_sub.exe...</div>',
+          bodyContent: ft.body,
           buttons: [{ label: 'OK', id: btnId }],
+          className: 'gift-popup',
           id: 'giftsub-' + Date.now()
         });
 
@@ -611,28 +1267,223 @@
         showCursorOffscreen();
 
         await WatsonOS.delay(100);
-        var bar = document.getElementById(barId);
-        if (bar) bar.style.width = '100%';
+        animateProgressBar(ft.barId, 2500);
 
-        await WatsonOS.delay(3000);
-        var status = document.getElementById(statusId);
-        if (status) status.textContent = 'Transfer Complete!';
+        /* Countdown the time-remaining label */
+        var countdown = 3;
+        var cdTimer = setInterval(function() {
+          countdown--;
+          if (countdown <= 0) {
+            clearInterval(cdTimer);
+            ft.timeLabel.textContent = 'Transfer Complete!';
+            ft.timeLabel.style.color = '#006600';
+            ft.timeLabel.style.fontWeight = 'bold';
+            win.className = win.className + ' ft-complete';
+            var tEl = win.querySelector('.w95-title-text');
+            if (tEl) tEl.textContent = '\u2705 Gift Subscription \u2014 Complete';
+          } else {
+            ft.timeLabel.textContent = 'Time remaining: About ' + countdown + ' second' + (countdown > 1 ? 's' : '');
+          }
+        }, 1000);
 
-        await WatsonOS.delay(1000);
+        await WatsonOS.delay(4000);
 
         var btn = document.getElementById(btnId);
         if (btn) {
-          var r = btn.getBoundingClientRect();
-          WatsonOS.moveCursorNatural(cursor, r.left + r.width / 2 - 5, r.top + r.height / 2 - 2, 600, function() {
-            WatsonOS.clickButton(btn);
-            setTimeout(function() {
-              WatsonOS.dismissWindow(win, function() { hideCursor(); done(); });
-            }, 200);
-          });
+          await moveCursorToButton(btn, 400);
+          WatsonOS.clickButton(btn);
+          await WatsonOS.delay(150);
+          WatsonOS.dismissWindow(win, function() { hideCursor(); done(); });
         } else {
           WatsonOS.dismissWindow(win, function() { hideCursor(); done(); });
         }
       });
+    });
+
+    /* ═══════════════════════════════════════════════════════════
+       FULLSCREEN OVERLAY SYSTEM
+       Handles show-video, show-image, text-overlay, custom_video
+       events — previously in fullscreen_overlay.html
+       ═══════════════════════════════════════════════════════════ */
+    var fsLayer = document.getElementById('fullscreen-layer');
+    var FLASK_SERVER = 'http://localhost:5555';
+    var MAX_CONCURRENT_VIDEOS = 5;
+
+    function getNormalizedPath(url) {
+      if (url.indexOf('http://') === 0 || url.indexOf('https://') === 0 || url.indexOf('/') === 0) return url;
+      if (url.indexOf('file:///') === 0) return url;
+      return url.indexOf('localhost') === 0 ? 'http://' + url : url;
+    }
+
+    function getVideoPosition(data) {
+      if (!data.position) {
+        return { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+      }
+      return data.position;
+    }
+
+    function fadeOutOverlay(element, data) {
+      var videos = element.querySelectorAll('video');
+      for (var i = 0; i < videos.length; i++) {
+        try { videos[i].pause(); videos[i].loop = false; } catch (e) {}
+      }
+
+      if (data.animateOut) {
+        if (data.animateIn) element.classList.remove('animate__' + data.animateIn);
+        element.classList.add('animate__' + data.animateOut);
+        var removeTimeout = setTimeout(function() { if (element.parentNode) element.remove(); }, 1500);
+        element.addEventListener('animationend', function() {
+          clearTimeout(removeTimeout);
+          if (element.parentNode) element.remove();
+        });
+      } else {
+        element.style.transition = 'opacity 0.5s ease-out';
+        element.style.opacity = '0';
+        setTimeout(function() { if (element.parentNode) element.remove(); }, 500);
+      }
+    }
+
+    /* ── custom_video ── */
+    WatsonOS.on('custom_video', function(data) {
+      var activeVideos = fsLayer.querySelectorAll('.video-overlay');
+      if (activeVideos.length >= MAX_CONCURRENT_VIDEOS) {
+        if (activeVideos[0] && activeVideos[0].parentNode) activeVideos[0].remove();
+      }
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'video-overlay video-overlay-custom_video animate__animated';
+      if (data.animateIn) wrapper.classList.add('animate__' + data.animateIn);
+
+      var pos = getVideoPosition(data);
+      for (var p in pos) wrapper.style[p] = pos[p];
+
+      var video = document.createElement('video');
+      video.className = 'custom-video custom_video';
+      video.src = getNormalizedPath(data.video_path);
+      video.autoplay = true;
+      video.playsInline = true;
+      video.loop = false;
+      video.muted = data.muted || false;
+      video.controls = false;
+      video.volume = typeof data.volume === 'number' ? data.volume : (typeof data.volume === 'string' ? parseFloat(data.volume) : 1.0);
+      if (data.width) video.style.width = data.width;
+      if (data.height) video.style.height = data.height;
+
+      wrapper.appendChild(video);
+      fsLayer.appendChild(wrapper);
+
+      var dur = data.duration || 10000;
+      setTimeout(function() {
+        if (wrapper.parentNode) fadeOutOverlay(wrapper, data);
+      }, dur);
+    });
+
+    /* ── show-video ── */
+    WatsonOS.on('show-video', function(data) {
+      var existing = fsLayer.querySelectorAll('.video-display-wrapper');
+      for (var i = 0; i < existing.length; i++) existing[i].remove();
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'video-display-wrapper';
+      if (data.animateIn) wrapper.classList.add('animate__animated', 'animate__' + data.animateIn);
+      if (data.style) {
+        for (var s in data.style) wrapper.style[s] = data.style[s];
+      }
+
+      var video = document.createElement('video');
+      video.className = 'video-display';
+      video.src = getNormalizedPath(data.url);
+      video.autoplay = true;
+      video.loop = false;
+      video.muted = true;
+      video.playsInline = true;
+      video.controls = false;
+      video.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block';
+
+      video.addEventListener('loadeddata', function() {
+        setTimeout(function() {
+          try {
+            video.muted = false;
+            video.volume = typeof data.volume === 'number' ? data.volume : 0.5;
+          } catch (e) {}
+        }, 1000);
+      });
+
+      wrapper.appendChild(video);
+      fsLayer.appendChild(wrapper);
+
+      setTimeout(function() { try { video.play(); } catch (e) {} }, 100);
+
+      var dur = data.duration || 10000;
+      setTimeout(function() {
+        if (wrapper.parentNode) fadeOutOverlay(wrapper, data);
+      }, dur);
+    });
+
+    /* ── show-image ── */
+    WatsonOS.on('show-image', function(data) {
+      var existing = fsLayer.querySelectorAll('.image-display-wrapper');
+      for (var i = 0; i < existing.length; i++) existing[i].remove();
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'image-display-wrapper animate__animated';
+      if (data.animateIn) wrapper.classList.add('animate__' + data.animateIn);
+      if (data.style) {
+        if (data.style.position) wrapper.style.position = data.style.position;
+        if (data.style.top) wrapper.style.top = data.style.top;
+        if (data.style.left) wrapper.style.left = data.style.left;
+      }
+
+      var img = document.createElement('img');
+      img.className = 'image-display';
+      img.src = FLASK_SERVER + data.url;
+      if (data.style) {
+        if (data.style.width) img.style.width = data.style.width;
+        if (data.style.height) img.style.height = data.style.height;
+        if (data.style.borderRadius) img.style.borderRadius = data.style.borderRadius;
+      }
+      img.onload = function() { wrapper.style.visibility = 'visible'; };
+
+      wrapper.appendChild(img);
+      fsLayer.appendChild(wrapper);
+
+      if (data.duration) {
+        setTimeout(function() {
+          if (data.animateOut) {
+            if (data.animateIn) wrapper.classList.remove('animate__' + data.animateIn);
+            wrapper.classList.add('animate__' + data.animateOut);
+            wrapper.addEventListener('animationend', function() { wrapper.remove(); });
+          } else {
+            wrapper.style.opacity = '0';
+            setTimeout(function() { wrapper.remove(); }, 500);
+          }
+        }, data.duration);
+      }
+    });
+
+    /* ── text-overlay ── */
+    WatsonOS.on('text-overlay', function(data) {
+      var el = document.createElement('div');
+      el.className = 'animate__animated';
+      if (data.animateIn) el.classList.add('animate__' + data.animateIn);
+      el.textContent = data.content || '';
+      if (data.style) { for (var s in data.style) el.style[s] = data.style[s]; }
+      if (data.position) { for (var p in data.position) el.style[p] = data.position[p]; }
+
+      fsLayer.appendChild(el);
+
+      if (data.duration) {
+        setTimeout(function() {
+          if (data.animateOut) {
+            if (data.animateIn) el.classList.remove('animate__' + data.animateIn);
+            el.classList.add('animate__' + data.animateOut);
+            el.addEventListener('animationend', function() { el.remove(); });
+          } else {
+            el.style.opacity = '0';
+            setTimeout(function() { el.remove(); }, 500);
+          }
+        }, data.duration);
+      }
     });
   </script>
 </body>

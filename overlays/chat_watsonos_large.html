@@ -116,6 +116,9 @@
     .chat-msg .message {
       color: #c0c0c0;
     }
+    .chat-msg .mention {
+      font-weight: bold;
+    }
     .chat-msg .emote {
       display: inline-block;
       vertical-align: middle;
@@ -231,7 +234,13 @@
       span.className = 'message';
       if (!fragments || !fragments.length) return span;
       fragments.forEach(part => {
-        if (part.type === 'text') {
+        if (part.type === 'mention') {
+          const mentionEl = document.createElement('span');
+          mentionEl.className = 'mention';
+          mentionEl.style.color = part.color || getColor(part.username || '');
+          mentionEl.textContent = part.content;
+          span.appendChild(mentionEl);
+        } else if (part.type === 'text') {
           span.appendChild(document.createTextNode(part.content));
         } else if (part.type === 'twitch_emote' || part.type === '7tv_emote') {
           const emoteEl = document.createElement('span');

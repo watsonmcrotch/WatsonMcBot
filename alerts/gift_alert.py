@@ -53,7 +53,12 @@ class GiftSubAlert:
 
             # Trigger WatsonOS browser overlay giftsub alert
             if hasattr(self.bot, 'overlay_manager'):
-                asyncio.create_task(self.bot.overlay_manager.trigger_giftsub_alert(gifter_display, total_subs))
+                asyncio.create_task(self.bot.overlay_manager.trigger_giftsub_alert(
+                    gifter_display, total_subs,
+                    recipient=recipient_display,
+                    gifter_login=gifter_username,
+                    recipient_login=recipient_username
+                ))
 
             await self.set_light_color(self.white_rgb)
             await asyncio.sleep(0.5)

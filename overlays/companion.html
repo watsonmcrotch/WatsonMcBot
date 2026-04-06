@@ -3357,7 +3357,14 @@
                         this.handleReaction({ type: 'alert-follow', intensity: 1 });
                         break;
                     case 'watsonos_bits':
-                        if (data.data && data.data.bits >= 100) {
+                        if (data.data && data.data.bits >= 1000) {
+                            /* BSOD cheer: delay companion reaction until after BSOD clears (~4.5s) */
+                            var bsodBits = data.data.bits;
+                            var self = this;
+                            setTimeout(function() {
+                                self.handleReaction({ type: 'alert-megacheer', intensity: Math.min(bsodBits / 100, 3) });
+                            }, 4500);
+                        } else if (data.data && data.data.bits >= 100) {
                             this.handleReaction({ type: 'alert-megacheer', intensity: Math.min(data.data.bits / 100, 3) });
                         } else {
                             this.handleReaction({ type: 'alert-cheer', intensity: 1 });

@@ -194,6 +194,12 @@ class EdgeCog(commands.Cog):
                                     self.bot.recovery_cooldowns = {}
                                 self.bot.recovery_cooldowns[winner] = duel['suspended_cooldowns'][winner]
 
+                            self.bot.last_duel_winner = {
+                                'winner': winner_display,
+                                'loser': display_name,
+                                'streak': streak
+                            }
+
                             del self.bot.active_duels[challenger]
                             del self.bot.active_duels[opponent]
 

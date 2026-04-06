@@ -202,7 +202,7 @@ class RaidAlert:
 
             # Trigger WatsonOS browser overlay raid alert
             if hasattr(self.bot, 'overlay_manager'):
-                asyncio.create_task(self.bot.overlay_manager.trigger_raid_alert(username, viewer_count))
+                asyncio.create_task(self.bot.overlay_manager.trigger_raid_alert(username, viewer_count, display_name=display_name))
 
             channel = self.bot.get_channel(os.getenv('CHANNEL_USERNAME'))
             if channel:

@@ -162,10 +162,8 @@ The alerts overlay expects sound files in `C:\WatsonMcBot\overlays\assets\sounds
 | `sub_alert.mp3` | Subscription alerts |
 | `giftsub.mp3` | Gift sub alerts |
 | `giftsub_mass.mp3` | Mass gift sub alerts |
-
-The intro/outro also use sounds from the same directory:
-- `intro.mp3` — Intro transition boot sequence
-- `outro.mp3` — Outro transition shutdown sequence
+| `popup.mp3` | Window appear sound (all popups) |
+| `click.mp3` | Button click sound (all UI clicks) |
 
 Place all sound files in `C:\WatsonMcBot\overlays\assets\sounds\`. If a file is missing, the alert will still display — only the sound will be silent.
 

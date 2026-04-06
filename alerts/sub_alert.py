@@ -38,7 +38,7 @@ class SubscriptionAlert:
             # Trigger WatsonOS browser overlay sub alert
             if hasattr(self.bot, 'overlay_manager'):
                 asyncio.create_task(self.bot.overlay_manager.trigger_sub_alert(
-                    username, tier, is_resub, cumulative_months))
+                    username, tier, is_resub, cumulative_months, display_name=display_name))
 
             sub_info = {
                 'display_name': display_name,

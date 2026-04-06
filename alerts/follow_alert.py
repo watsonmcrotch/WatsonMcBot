@@ -26,9 +26,13 @@ class FollowAlert:
 
     async def trigger(self, username):
         try:
+            # Resolve display name for overlay text
+            user_context = await asyncio.to_thread(self.bot.db_manager.get_user_context, username)
+            display_name = user_context.get('nickname', username)
+
             # Trigger WatsonOS browser overlay alert if available
             if hasattr(self.bot, 'overlay_manager'):
-                asyncio.create_task(self.bot.overlay_manager.trigger_follow_alert(username))
+                asyncio.create_task(self.bot.overlay_manager.trigger_follow_alert(username, display_name=display_name))
 
             await asyncio.gather(
                 self.send_overlay_alert(username),

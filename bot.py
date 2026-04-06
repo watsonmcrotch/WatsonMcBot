@@ -674,6 +674,7 @@ class WatsonMcBot(commands.Bot):
         self.edge_milestones = {}
         self.user_last_edge_times = {}
         self.edge_session_starts = {}
+        self.last_duel_winner = None
 
         self.spam_patterns = [
             "streamboo",
@@ -2595,10 +2596,10 @@ Be casually witty or return "SKIP". Those are your options."""
                     await self.follow_alert.trigger(event_data['user_login'])
 
             elif subscription_type == 'channel.cheer':
-                if 'user_name' not in event_data or 'bits' not in event_data:
+                if 'bits' not in event_data:
                     logging.error("Missing required data in cheer event")
                     return
-                username = event_data.get('user_name', 'anonymous')
+                username = event_data.get('user_login', event_data.get('user_name', 'anonymous'))
                 bits = event_data['bits']
                 message = event_data.get('message', '')
                 await self.bit_alert.trigger(username, bits, message)

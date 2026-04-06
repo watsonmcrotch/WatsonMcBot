@@ -163,7 +163,7 @@ class BitAlert:
 
             # Trigger WatsonOS browser overlay bits alert
             if hasattr(self.bot, 'overlay_manager'):
-                asyncio.create_task(self.bot.overlay_manager.trigger_bits_alert(username, bits))
+                asyncio.create_task(self.bot.overlay_manager.trigger_bits_alert(username, bits, display_name=display_name))
 
             if bits >= 100:
                 if bits >= 1000:
@@ -172,7 +172,14 @@ class BitAlert:
                     asyncio.create_task(self.flash_lights_100_plus())
 
             if bits >= 10:
-                await asyncio.sleep(1)
+                if bits >= 1000:
+                    await asyncio.sleep(10)
+                elif bits == 69:
+                    await asyncio.sleep(7)
+                elif bits >= 100:
+                    await asyncio.sleep(6)
+                else:
+                    await asyncio.sleep(5)
 
                 cleaned_message = self.clean_cheer_message(message)
                 tts_text = cleaned_message if cleaned_message else f"{display_name} cheered {bits} bits!"

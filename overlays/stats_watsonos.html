@@ -41,14 +41,27 @@
       user-select: none;
       background: linear-gradient(90deg, #7b2d8e, #2ec4b6);
     }
+    .stats-title-left {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow: hidden;
+    }
+    .stats-title-icon {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      padding-left: 2px;
+    }
+    .stats-title-icon svg {
+      width: 14px;
+      height: 14px;
+    }
     .stats-title-text {
       color: #fff;
       font-weight: bold;
       font-size: 11px;
-      padding-left: 4px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      white-space: nowrap;
     }
     .stats-controls-top {
       display: flex;
@@ -85,66 +98,127 @@
 
     /* ── Content area ── */
     .stats-content {
-      overflow: hidden;
-      height: calc(100% - 22px);
       margin: 0 2px 2px;
+      height: calc(100% - 22px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stats-page {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      padding: 0 10px;
+      padding: 0 6px;
+      gap: 3px;
+      box-sizing: border-box;
+      opacity: 0;
+      transition: opacity 1.2s ease-in-out;
+      pointer-events: none;
+    }
+
+    .stats-page.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #808080;
+      padding: 0 2px 1px;
+      font-family: var(--wf);
+      font-weight: bold;
+      flex-shrink: 0;
     }
 
     /* ── Stat rows ── */
     .stat-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 8px;
-      box-shadow:
-        inset -1px -1px 0 #fff,
-        inset 1px 1px 0 #808080;
-      margin-bottom: -1px;
-    }
-    .stat-row:last-child {
-      margin-bottom: 0;
+      height: 34px;
+      flex-shrink: 0;
     }
 
-    .stat-icon {
-      font-size: 16px;
+    .stat-pip {
+      width: 3px;
+      height: 26px;
       flex-shrink: 0;
-      width: 20px;
-      text-align: center;
     }
+    .pip-follow  { background: #2ec4b6; }
+    .pip-cheer   { background: #e8a835; }
+    .pip-sub     { background: #7b2d8e; }
+    .pip-gift    { background: #d64e8a; }
+    .pip-raid    { background: #4a8fe7; }
+    .pip-trivia  { background: #44b87e; }
+    .pip-edge    { background: #e05555; }
 
     .stat-label {
-      font-size: 11px;
-      color: #808080;
-      width: 80px;
+      font-size: 12px;
+      color: #444;
+      width: 106px;
       flex-shrink: 0;
+      padding-left: 8px;
+      font-weight: bold;
+    }
+
+    .stat-field {
+      flex: 1;
+      min-width: 0;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      padding: 0 6px;
+      background: #fff;
+      box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        inset -2px -2px 0 #dfdfdf,
+        inset 2px 2px 0 #000;
     }
 
     .stat-value {
       font-size: 14px;
       font-weight: bold;
       color: #000;
-      flex: 1;
-      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      font-family: var(--wf);
+      line-height: 26px;
+      width: 100%;
     }
 
     .stat-value.empty {
-      color: #808080;
+      color: #a0a0a0;
       font-weight: normal;
       font-style: italic;
+      font-size: 12px;
     }
+
   </style>
 </head>
 <body>
   <div class="stats-window">
     <div class="stats-titlebar">
-      <span class="stats-title-text">📊 stats.exe</span>
+      <span class="stats-title-left">
+        <span class="stats-title-icon">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="10" width="3" height="5" fill="#2ec4b6"/>
+            <rect x="5" y="6" width="3" height="9" fill="#e8a835"/>
+            <rect x="9" y="3" width="3" height="12" fill="#7b2d8e"/>
+            <rect x="13" y="1" width="2" height="14" fill="#d64e8a"/>
+            <rect x="0" y="15" width="16" height="1" fill="rgba(255,255,255,0.5)"/>
+          </svg>
+        </span>
+        <span class="stats-title-text">stats.exe</span>
+      </span>
       <div class="stats-controls-top">
         <button>&ndash;</button>
         <button>&square;</button>
@@ -153,27 +227,80 @@
     </div>
 
     <div class="stats-content">
-      <div class="stat-row">
-        <span class="stat-icon">👤</span>
-        <span class="stat-label">Last Follow</span>
-        <span class="stat-value empty" id="stat-follower">Waiting...</span>
+      <!-- Page 1: Stream Activity -->
+      <div class="stats-page active" id="page-0">
+        <div class="page-header">Stream Activity</div>
+        <div class="stat-row">
+          <div class="stat-pip pip-follow"></div>
+          <span class="stat-label">Last Follow</span>
+          <div class="stat-field">
+            <span class="stat-value empty" id="stat-follower">Waiting...</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-pip pip-cheer"></div>
+          <span class="stat-label">Last Cheer</span>
+          <div class="stat-field">
+            <span class="stat-value empty" id="stat-cheer">Waiting...</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-pip pip-sub"></div>
+          <span class="stat-label">Last Sub</span>
+          <div class="stat-field">
+            <span class="stat-value empty" id="stat-sub">Waiting...</span>
+          </div>
+        </div>
       </div>
-      <div class="stat-row">
-        <span class="stat-icon">💎</span>
-        <span class="stat-label">Last Cheer</span>
-        <span class="stat-value empty" id="stat-cheer">Waiting...</span>
+
+      <!-- Page 2: Gifts & Raids -->
+      <div class="stats-page" id="page-1">
+        <div class="page-header">Community</div>
+        <div class="stat-row">
+          <div class="stat-pip pip-gift"></div>
+          <span class="stat-label">Last Gift Sub</span>
+          <div class="stat-field">
+            <span class="stat-value empty" id="stat-giftsub">Waiting...</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-pip pip-raid"></div>
+          <span class="stat-label">Last Raid</span>
+          <div class="stat-field">
+            <span class="stat-value empty" id="stat-raid">Waiting...</span>
+          </div>
+        </div>
       </div>
-      <div class="stat-row">
-        <span class="stat-icon">⭐</span>
-        <span class="stat-label">Last Sub</span>
-        <span class="stat-value empty" id="stat-sub">Waiting...</span>
+
+      <!-- Page 3: Winners -->
+      <div class="stats-page" id="page-2">
+        <div class="page-header">Winners</div>
+        <div class="stat-row">
+          <div class="stat-pip pip-trivia"></div>
+          <span class="stat-label">Trivia Winner</span>
+          <div class="stat-field">
+            <span class="stat-value empty" id="stat-trivia">Waiting...</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-pip pip-edge"></div>
+          <span class="stat-label">Edge Duel Winner</span>
+          <div class="stat-field">
+            <span class="stat-value empty" id="stat-edge">Waiting...</span>
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
 
   <script src="./assets/js/watsonos.js"></script>
   <script>
     var STORAGE_KEY = 'watsonos_stats';
+    var PAGE_COUNT = 3;
+    var ROTATE_MS = 180000;
+    var currentPage = 0;
+    var rotateTimer = null;
 
     function loadStats() {
       try {
@@ -181,17 +308,28 @@
         if (saved.follower) setStat('stat-follower', saved.follower);
         if (saved.cheer) setStat('stat-cheer', saved.cheer);
         if (saved.sub) setStat('stat-sub', saved.sub);
+        if (saved.giftsub) setStat('stat-giftsub', saved.giftsub);
+        if (saved.raid) setStat('stat-raid', saved.raid);
+        if (saved.trivia) setStat('stat-trivia', saved.trivia);
+        if (saved.edge) setStat('stat-edge', saved.edge);
       } catch (e) {}
     }
 
     function saveStats() {
       var stats = {};
-      var f = document.getElementById('stat-follower');
-      var c = document.getElementById('stat-cheer');
-      var s = document.getElementById('stat-sub');
-      if (!f.classList.contains('empty')) stats.follower = f.textContent;
-      if (!c.classList.contains('empty')) stats.cheer = c.textContent;
-      if (!s.classList.contains('empty')) stats.sub = s.textContent;
+      var fields = {
+        follower: 'stat-follower',
+        cheer: 'stat-cheer',
+        sub: 'stat-sub',
+        giftsub: 'stat-giftsub',
+        raid: 'stat-raid',
+        trivia: 'stat-trivia',
+        edge: 'stat-edge'
+      };
+      for (var key in fields) {
+        var el = document.getElementById(fields[key]);
+        if (!el.classList.contains('empty')) stats[key] = el.textContent;
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
     }
 
@@ -201,27 +339,98 @@
       el.classList.remove('empty');
     }
 
-    // Listen for events
+    function showPage(index) {
+      for (var i = 0; i < PAGE_COUNT; i++) {
+        var page = document.getElementById('page-' + i);
+        if (i === index) {
+          page.classList.add('active');
+        } else {
+          page.classList.remove('active');
+        }
+      }
+      currentPage = index;
+    }
+
+    function nextPage() {
+      showPage((currentPage + 1) % PAGE_COUNT);
+    }
+
+    function startRotation() {
+      if (rotateTimer) clearInterval(rotateTimer);
+      rotateTimer = setInterval(nextPage, ROTATE_MS);
+    }
+
+    // ── Event listeners ──
+
     WatsonOS.on('watsonos_follow', function(data) {
-      setStat('stat-follower', data.user || data.username || 'Unknown');
+      setStat('stat-follower', data.display_name || data.user || data.username || 'Unknown');
       saveStats();
     });
 
     WatsonOS.on('watsonos_bits', function(data) {
-      var user = data.user || data.username || 'Unknown';
+      var user = data.display_name || data.user || data.username || 'Unknown';
       var bits = data.bits || data.amount || 0;
-      setStat('stat-cheer', user + ' — ' + bits + ' bits');
+      setStat('stat-cheer', user + ' -- ' + bits + ' bits');
       saveStats();
     });
 
     WatsonOS.on('watsonos_sub', function(data) {
-      var user = data.user || data.username || 'Unknown';
-      var tier = data.tier ? ' (T' + data.tier + ')' : '';
-      setStat('stat-sub', user + tier);
+      var user = data.display_name || data.user || data.username || 'Unknown';
+      var tierRaw = data.tier || '';
+      var label = user;
+      if (tierRaw === '2000') label += ' (Tier 2)';
+      else if (tierRaw === '3000') label += ' (Tier 3)';
+      setStat('stat-sub', label);
       saveStats();
     });
 
+    WatsonOS.on('watsonos_giftsub', function(data) {
+      var gifter = data.gifter || 'Unknown';
+      var total = data.total_subs || 1;
+      var recipient = data.recipient;
+      if (recipient) {
+        setStat('stat-giftsub', gifter + ' gifted ' + recipient);
+      } else {
+        setStat('stat-giftsub', gifter + ' gifted x' + total);
+      }
+      saveStats();
+    });
+
+    WatsonOS.on('watsonos_raid', function(data) {
+      var user = data.display_name || data.username || 'Unknown';
+      var viewers = data.viewer_count || 0;
+      setStat('stat-raid', user + ' -- ' + viewers + ' viewers');
+      saveStats();
+    });
+
+    // ── Fetch trivia/edge winners from database via Flask ──
+
+    var FLASK_URL = 'http://' + (location.hostname || 'localhost') + ':5555';
+    var POLL_MS = 60000;
+
+    function fetchWinnerStats() {
+      fetch(FLASK_URL + '/api/overlay/stats')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.trivia_winner) {
+            var label = data.trivia_winner;
+            if (data.trivia_category) label += ' -- ' + data.trivia_category;
+            setStat('stat-trivia', label);
+          }
+          if (data.duel_winner) {
+            var duelText = data.duel_winner + ' beat ' + data.duel_loser;
+            if (data.duel_streak) duelText += ' (bust@' + data.duel_streak + ')';
+            setStat('stat-edge', duelText);
+          }
+          saveStats();
+        })
+        .catch(function() {});
+    }
+
     loadStats();
+    fetchWinnerStats();
+    setInterval(fetchWinnerStats, POLL_MS);
+    startRotation();
   </script>
 </body>
 </html>
